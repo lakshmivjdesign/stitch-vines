@@ -2,7 +2,7 @@
 // It runs src/vine-grow.js on the recorded page layouts (tests/fixtures/layout-<W>.json) and fails on every rule that can be measured (docs/rules.md).
 // It never looks at taste: only rules.  Checks 1-11 are the geometry of the plant and must pass (exit code 1 if one fails).
 // Checks 12-13 are composition targets (how many branches, whether flowers appear): reported as WARN, and failing only with --strict.
-//   node tests/check.js 910            one width        --file other.js   a different generator       --json out.json   dump the stitches       --strict
+//   node tests/check.js 910            one width (demo-910: a layout recorded with tools/record-layout.js)        --file other.js   a different generator       --json out.json   dump the stitches       --strict
 const fs = require('fs'), path = require('path');
 const { loadCtx, run } = require('./harness.js');
 
@@ -113,7 +113,7 @@ function check(out, ctx0) {
 
 function main() {
   const args = process.argv.slice(2); let file = path.join(__dirname, '..', 'src', 'vine-grow.js'), json = null, strict = false; const widths = [];
-  for (let i = 0; i < args.length; i++) { if (args[i] === '--file') file = path.resolve(args[++i]); else if (args[i] === '--json') json = args[++i]; else if (args[i] === '--strict') strict = true; else if (/^\d+$/.test(args[i])) widths.push(+args[i]); }
+  for (let i = 0; i < args.length; i++) { if (args[i] === '--file') file = path.resolve(args[++i]); else if (args[i] === '--json') json = args[++i]; else if (args[i] === '--strict') strict = true; else if (/^(\w+-)?\d+$/.test(args[i])) widths.push(/^\d+$/.test(args[i]) ? +args[i] : args[i]); }      // 910, or demo-910 for tests/fixtures/layout-demo-910.json
   if (!widths.length) widths.push(910, 1024, 1440, 1920, 700);
   let bad = 0, warn = 0;
   widths.forEach(W => { const ctx = loadCtx(W), out = run(file, ctx); console.log(`\n== ${W} px: ${out.length} polylines, ${(out.limbs || []).length} limbs, ${out.ms} ms`);
