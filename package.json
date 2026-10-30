@@ -1,0 +1,9 @@
+{
+  "name": "stitch-vines",
+  "version": "0.1.0",
+  "description": "Grows plant-like vine backgrounds in the empty space of a web page, by rules, with an automatic checker.",
+  "license": "MIT",
+  "private": false,
+  "scripts": { "test": "node tests/check.js" },
+  "engines": { "node": ">=18" }
+}
