@@ -12,4 +12,4 @@ In order of what unlocks the most.
 8. **Found while building the adapter (not fixed, outside its brief).**
    - The checker passes when the generator returns no vines at all (zero limbs): it should fail.
    - When one margin vine cannot be placed, the generator drops all vines. Cause seen on the demo: text or objects in the footer corners right under the footer line (the base bud is more than a fifth covered), or a first row of cards too close to the top (the top spiral runs into a card).
-   - Margin strips of 5 stitches (40 px) work only just; wider centred layouts with large side margins have not been tried.
+   - Only side margins of 40 and 72 px have been tried (5 and 11 stitches). Wider margins, for example a centred column on a wide screen, are untried (guessing: the margin vines may need tuning there).
