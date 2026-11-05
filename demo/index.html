@@ -34,7 +34,9 @@
   footer p { margin: 0; font-size: 14px; text-align: center; }
   /* the vine overlay: behind the content, never in the way */
   #stitch-vines-layer { position: absolute; left: 0; top: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; overflow: hidden; }
-  #stitch-vines-status { position: fixed; right: 12px; bottom: 12px; padding: 4px 10px; background: var(--card); border: 1px solid var(--line); font: 13px/1.4 system-ui, sans-serif; z-index: 5; }
+  #stitch-vines-panel { position: fixed; right: 12px; bottom: 12px; max-width: min(420px, calc(100vw - 24px)); padding: 6px 10px; background: var(--card); border: 1px solid var(--line); font: 13px/1.4 system-ui, sans-serif; z-index: 5; }
+  #stitch-vines-panel label { display: block; margin-top: 4px; }
+  #stitch-vines-panel select { font: inherit; }
 </style>
 </head>
 <body>
@@ -80,11 +82,24 @@
   <p>Example footer text.</p>
 </footer>
 
-<div id="stitch-vines-status" role="status" data-stitch-ignore>Growing vines…</div>
+<div id="stitch-vines-panel" data-stitch-ignore>
+  <div id="stitch-vines-status" role="status">Growing vines…</div>
+  <label>Style
+    <select id="stitch-style">
+      <option value="cross">Cross stitch</option>
+      <option value="charcoal">Charcoal</option>
+      <option value="kolam">Kolam (inspired)</option>
+      <option value="zentangle">Zentangle (inspired)</option>
+      <option value="quilling">Quilling (inspired)</option>
+    </select>
+  </label>
+</div>
 
-<!-- The page shows first. The vines take a few seconds to grow, so they are grown in a worker and drawn when ready (add ?mask to see what was measured). -->
+<!-- The page shows first. The vines take a few seconds to grow, so they are grown in a worker and drawn when ready (add ?mask to see what was measured, ?style=charcoal to open in a style). -->
 <script src="../src/vine-grow.js"></script>
 <script src="../src/page-adapter.js"></script>
+<script src="collect.js"></script>
+<script src="styles.js"></script>
 <script src="render.js"></script>
 </body>
 </html>

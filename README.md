@@ -33,6 +33,8 @@ See the demo in a browser (any static server will do):
 
 The page shows first; the vines are grown in a background worker (about 1 to 3 seconds on the demo) and drawn when ready.
 
+The demo has a style switch (bottom right, or `?style=charcoal` in the address): cross stitch, charcoal, kolam, zentangle and quilling. Changing style redraws the same vines. Cross stitch and charcoal are looks given to the vines as they are. Kolam, zentangle and quilling are *inspired by* those arts, drawn on the same vine shapes; a real kolam (a dot grid and looping lines) or a real zentangle would need its own generator. This is an experiment to decide a direction, not a finished feature.
+
 Use it on a page of your own: load `src/vine-grow.js` and `src/page-adapter.js`, then
 
     const ctx = StitchVinesAdapter.measure({ headings: 'h2', cards: '.card' });
