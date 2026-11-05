@@ -2,6 +2,8 @@
 
 Grows a plant-like vine background (margin vines, branches, leaves, roses, buds and golden-ratio spirals) in the empty space of a web page, by rules, so the same look works on any layout.
 
+Made with Claude.
+
 ![Example: vines grown on a recorded layout at 910 px. Grey blocks are cards and images, light blocks are text.](docs/example-910.svg)
 
 ## What it is
