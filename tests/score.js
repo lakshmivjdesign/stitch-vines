@@ -15,6 +15,7 @@ function scoreOne(f) {
     const sides = new Set((out.limbs || []).filter(l => l.kind === 'margin').map(l => l.side)); row.margins = [...sides].join('');
     const res = check(out, cu), bad = res.filter(r => !r.pass && r.id !== 12 && r.id !== 13);
     row.fail = bad.map(r => r.id).join(',');
+    let fl = 0, lf = 0; (out.limbs || []).forEach(l => l.organs.forEach(o => { if (o.kind === 'leaf') lf++; else fl++; })); row.flowers = fl; row.leaves = lf; row.branches = (out.limbs || []).filter(l => l.kind !== 'margin').length;
     row.real = row.limbs >= 2 && sides.size === 2; row.geometry = bad.length === 0; row.pass = row.real && row.geometry;
     row.why = (out.status && !out.status.ok && out.status.message || '').slice(0, 160);
   } catch (e) { row.crash = String(e.message || e).split('\n')[0].slice(0, 90); row.pass = false; row.limbs = 0; }
@@ -31,7 +32,7 @@ function spawn() {
 }
 function done() {
   rows.sort((a, b) => a.site < b.site ? -1 : a.site > b.site ? 1 : a.W - b.W);
-  if (!quiet) rows.forEach(r => console.log(`${r.pass ? 'PASS' : 'FAIL'} ${r.site.padEnd(14)} ${String(r.W).padStart(4)} u${r.u ?? '-'} m${String(r.marginSt ?? '-').padStart(5)}st  ${String(r.limbs).padStart(3)} limbs  ${r.margins || '-'}  ${String(r.ms ?? '-').padStart(5)} ms${r.rung != null ? '  rung ' + r.rung : ''}${r.fail ? '  geometry FAIL ' + r.fail : ''}${r.crash ? '  CRASH ' + r.crash : ''}${r.why && !r.pass ? '  ' + r.why : ''}`));
+  if (!quiet) rows.forEach(r => console.log(`${r.pass ? 'PASS' : 'FAIL'} ${r.site.padEnd(14)} ${String(r.W).padStart(4)} u${r.u ?? '-'} m${String(r.marginSt ?? '-').padStart(5)}st  ${String(r.limbs).padStart(3)} limbs (${r.branches ?? '-'} br, ${r.flowers ?? '-'} fl)  ${r.margins || '-'}  ${String(r.ms ?? '-').padStart(5)} ms${r.rung != null ? '  rung ' + r.rung : ''}${r.fail ? '  geometry FAIL ' + r.fail : ''}${r.crash ? '  CRASH ' + r.crash : ''}${r.why && !r.pass ? '  ' + r.why : ''}`));
   const by = {}; rows.forEach(r => { (by[r.site] = by[r.site] || []).push(r); });
   const tot = rows.length, ok = rows.filter(r => r.pass).length, own = rows.filter(r => r.own), ownOk = own.filter(r => r.pass).length;
   console.log(`\nSCORE ${ok}/${tot} layouts pass (${Math.round(100 * ok / tot)}%); her pages + demo ${ownOk}/${own.length}; sites with all 5 widths ${Object.values(by).filter(a => a.every(r => r.pass)).length}/${Object.keys(by).length}; zero vines ${rows.filter(r => !r.limbs).length}`);

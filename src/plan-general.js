@@ -35,7 +35,7 @@ window.StitchVinesGeneral = function (ctx, opt) {
       if (!nws.length) { stats.fail.push(`margin ${side} piece ${top}-${bot}: height ${H} fits no wave`); return; }
       let L = marginVine(sg, { seg: true, name: `m${side}${k}`, xIn, xOut, yBot, yTop, NWs: nws.slice(0, 3), dBots: [0, 8, 16], r0s: [9.5, 8, 6.8], dTops: [0, 8] });
       if (!L) { status.rung = Math.max(status.rung, 1); L = marginVine(sg, { seg: true, term: 'bud', name: `m${side}${k}`, xIn, xOut, yBot, yTop: yTop - 12, NWs: nws.slice(0, 3), dBots: [0, 8, 16], dTops: [0, 8] }); }   // rung 1: the top ends in a bud, not a spiral (a spiral needs about 14 stitches of room)
-      if (L) { marginLeaves(L); L.piece = [top, bot]; segs[side].push(L); }
+      if (L) { E.marginRoses(L); marginLeaves(L); L.piece = [top, bot]; segs[side].push(L); }
     });
   }
   const nMargin = segs.L.length + segs.R.length;
@@ -48,7 +48,7 @@ window.StitchVinesGeneral = function (ctx, opt) {
     const sg = side === 'L' ? 1 : -1, f = free[side], inner = L => { let m = 1e9; for (let r = L.piece[0]; r <= L.piece[1]; r++) m = Math.min(m, f[r]); return Math.min(m, STRIPMAX + 2); };
     // pockets: runs of rows with at least 16 free columns beyond the margin strip
     const pockets = []; let a = -1;
-    for (let r = rowMin; r <= rowFoot; r++) { const L = parentAt(side, r), w = L ? f[r] - inner(L) : 0, ok = w >= 16; if (ok && a < 0) a = r; if ((!ok || r === rowFoot) && a >= 0) { if (r - a >= 20) pockets.push([a, r - 1]); a = -1; } }
+    for (let r = rowMin; r <= rowFoot; r++) { const L = parentAt(side, r), w = L ? f[r] - inner(L) : 0, ok = w >= 12; if (ok && a < 0) a = r; if ((!ok || r === rowFoot) && a >= 0) { if (r - a >= 16) pockets.push([a, r - 1]); a = -1; } }
     pockets.forEach(([ra, rb], pi) => {
       const rows = rb - ra + 1, L = parentAt(side, rb); if (!L) return;
       let depth = 1e9; for (let r = ra; r <= rb; r++) depth = Math.min(depth, f[r]);

@@ -207,9 +207,13 @@ window.StitchVinesEngine = function (ctx) {
   function marginLeaves(L) { seedFor(L.name + '#leaves'); const n = L.P.length - 1, total = L.S[n]; let s = 12, k = 0;                             // the margin strip is a few stitches wide: the leaves face inward
     while (s < total - 30) { const t = s / total, sz = Math.max(6, 7 + 5 * Math.sin(Math.PI * t)), i = Math.round(s / DS);
       const o = tryOrgan(L, mkLeaf, i, [L.sg], [sz, sz * .85, sz * .7].filter(v => v >= 5), { angs: [50, 38, 62] }); if (o) { s += 12 + k % 2 * 4 + 6 * Math.abs(.5 - t); k++; } else s += 2; } }
+  function marginRoses(L) { seedFor(L.name + '#roses'); const n = L.P.length - 1, total = L.S[n]; let prevR = 99, k = 0;                    // roses are big near the base and smaller further up; half of them carry a bud beside them
+    for (let s = 30; s < total - 40; s += 80) { const t = s / total, R = Math.min(prevR, 6.2 - 2.6 * t), sizes = [R, R * .88, R * .76, R * .66].filter(v => v >= 3.4); let o = null, at0 = 0;
+      for (const off of [0, 6, -6, 12, -12, 18, -18, 24]) { const i = Math.round((s + off) / DS); if (i < 24 || i > n - 30) continue; o = tryOrgan(L, mkRose, i, k % 2 ? [L.sg, -L.sg] : [-L.sg, L.sg], sizes, { angs: [70, 56, 84] }); if (o) { at0 = i; break; } }
+      if (o) { prevR = o.size; k++; if (roseCount++ % 2 === 0) for (const off of [24, 30, -24, 36]) { const j = at0 + off; if (j > 24 && j < n - 10 && tryOrgan(L, mkBud, j, [-o.side, o.side], [7, 6, 5.5], { angs: [50, 62] })) break; } } } }
   const finish = () => { const out = []; limbs.forEach(L => { out.push(L.head.concat(L.stem, L.tail.slice(1))); L.organs.forEach(o => o.polys.forEach(p => out.push(p))); }); out.limbs = limbs; stats.limbs = limbs.length; return out; };
   return { ctx, u, m, W, foot, heads, cell, textClear, PHI, D, TAU, MINR, DS, cs, ce, NC, C, rowMin, rowFoot, NR, kindAt, hid, cardRows, limbs, margins, stats, rnd, rr, seedFor,
-    marginVine, marginLeaves, finish, placeLimb, mirror, tryOrgan, mkLeaf, mkRose, mkBud, edgeL, edgeR };
+    marginVine, marginLeaves, marginRoses, finish, placeLimb, mirror, tryOrgan, mkLeaf, mkRose, mkBud, edgeL, edgeR };
 };
 
 /* stitch-vines GENERAL PLANNER: plans vines for ANY page from its free-space map alone (no headings, no rows of cards needed).
@@ -249,7 +253,7 @@ window.StitchVinesGeneral = function (ctx, opt) {
       if (!nws.length) { stats.fail.push(`margin ${side} piece ${top}-${bot}: height ${H} fits no wave`); return; }
       let L = marginVine(sg, { seg: true, name: `m${side}${k}`, xIn, xOut, yBot, yTop, NWs: nws.slice(0, 3), dBots: [0, 8, 16], r0s: [9.5, 8, 6.8], dTops: [0, 8] });
       if (!L) { status.rung = Math.max(status.rung, 1); L = marginVine(sg, { seg: true, term: 'bud', name: `m${side}${k}`, xIn, xOut, yBot, yTop: yTop - 12, NWs: nws.slice(0, 3), dBots: [0, 8, 16], dTops: [0, 8] }); }   // rung 1: the top ends in a bud, not a spiral (a spiral needs about 14 stitches of room)
-      if (L) { marginLeaves(L); L.piece = [top, bot]; segs[side].push(L); }
+      if (L) { E.marginRoses(L); marginLeaves(L); L.piece = [top, bot]; segs[side].push(L); }
     });
   }
   const nMargin = segs.L.length + segs.R.length;
@@ -262,7 +266,7 @@ window.StitchVinesGeneral = function (ctx, opt) {
     const sg = side === 'L' ? 1 : -1, f = free[side], inner = L => { let m = 1e9; for (let r = L.piece[0]; r <= L.piece[1]; r++) m = Math.min(m, f[r]); return Math.min(m, STRIPMAX + 2); };
     // pockets: runs of rows with at least 16 free columns beyond the margin strip
     const pockets = []; let a = -1;
-    for (let r = rowMin; r <= rowFoot; r++) { const L = parentAt(side, r), w = L ? f[r] - inner(L) : 0, ok = w >= 16; if (ok && a < 0) a = r; if ((!ok || r === rowFoot) && a >= 0) { if (r - a >= 20) pockets.push([a, r - 1]); a = -1; } }
+    for (let r = rowMin; r <= rowFoot; r++) { const L = parentAt(side, r), w = L ? f[r] - inner(L) : 0, ok = w >= 12; if (ok && a < 0) a = r; if ((!ok || r === rowFoot) && a >= 0) { if (r - a >= 16) pockets.push([a, r - 1]); a = -1; } }
     pockets.forEach(([ra, rb], pi) => {
       const rows = rb - ra + 1, L = parentAt(side, rb); if (!L) return;
       let depth = 1e9; for (let r = ra; r <= rb; r++) depth = Math.min(depth, f[r]);

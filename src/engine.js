@@ -207,7 +207,11 @@ window.StitchVinesEngine = function (ctx) {
   function marginLeaves(L) { seedFor(L.name + '#leaves'); const n = L.P.length - 1, total = L.S[n]; let s = 12, k = 0;                             // the margin strip is a few stitches wide: the leaves face inward
     while (s < total - 30) { const t = s / total, sz = Math.max(6, 7 + 5 * Math.sin(Math.PI * t)), i = Math.round(s / DS);
       const o = tryOrgan(L, mkLeaf, i, [L.sg], [sz, sz * .85, sz * .7].filter(v => v >= 5), { angs: [50, 38, 62] }); if (o) { s += 12 + k % 2 * 4 + 6 * Math.abs(.5 - t); k++; } else s += 2; } }
+  function marginRoses(L) { seedFor(L.name + '#roses'); const n = L.P.length - 1, total = L.S[n]; let prevR = 99, k = 0;                    // roses are big near the base and smaller further up; half of them carry a bud beside them
+    for (let s = 30; s < total - 40; s += 80) { const t = s / total, R = Math.min(prevR, 6.2 - 2.6 * t), sizes = [R, R * .88, R * .76, R * .66].filter(v => v >= 3.4); let o = null, at0 = 0;
+      for (const off of [0, 6, -6, 12, -12, 18, -18, 24]) { const i = Math.round((s + off) / DS); if (i < 24 || i > n - 30) continue; o = tryOrgan(L, mkRose, i, k % 2 ? [L.sg, -L.sg] : [-L.sg, L.sg], sizes, { angs: [70, 56, 84] }); if (o) { at0 = i; break; } }
+      if (o) { prevR = o.size; k++; if (roseCount++ % 2 === 0) for (const off of [24, 30, -24, 36]) { const j = at0 + off; if (j > 24 && j < n - 10 && tryOrgan(L, mkBud, j, [-o.side, o.side], [7, 6, 5.5], { angs: [50, 62] })) break; } } } }
   const finish = () => { const out = []; limbs.forEach(L => { out.push(L.head.concat(L.stem, L.tail.slice(1))); L.organs.forEach(o => o.polys.forEach(p => out.push(p))); }); out.limbs = limbs; stats.limbs = limbs.length; return out; };
   return { ctx, u, m, W, foot, heads, cell, textClear, PHI, D, TAU, MINR, DS, cs, ce, NC, C, rowMin, rowFoot, NR, kindAt, hid, cardRows, limbs, margins, stats, rnd, rr, seedFor,
-    marginVine, marginLeaves, finish, placeLimb, mirror, tryOrgan, mkLeaf, mkRose, mkBud, edgeL, edgeR };
+    marginVine, marginLeaves, marginRoses, finish, placeLimb, mirror, tryOrgan, mkLeaf, mkRose, mkBud, edgeL, edgeR };
 };
