@@ -113,5 +113,60 @@
     await Promise.race([work, limit]);
   }
 
-  root.StitchVinesAdapter = { measure, snapshot, ready, contrast, defaults };
+
+  /* ---- scan: measure ANY page without assuming sections (the general route, v0.2). Returns boxes; `rasterize` turns them into a grid at any stitch size ----
+     Nothing but geometry is kept: text lines and objects as boxes, never the words or the pictures. */
+  function scan(options) {
+    const o = Object.assign({ objects: defaults.objects, ignore: defaults.ignore, maxHeight: 10000, header: 'header, [role="banner"]', footer: 'footer, [role="contentinfo"]' }, options || {});
+    const doc = root.document, notes = [], problems = [];
+    const W = doc.documentElement.clientWidth, docH = Math.max(doc.documentElement.scrollHeight, doc.body.scrollHeight);
+    const ignored = el => !!(o.ignore && el.closest && el.closest(o.ignore));
+    const fixedUp = el => { for (let e = el; e && e.nodeType === 1; e = e.parentElement) { const p = root.getComputedStyle(e).position; if (p === 'fixed') return true; } return false; };
+    const all = sel => [...doc.querySelectorAll(sel)].filter(el => !ignored(el) && visible(el) && !fixedUp(el));
+    // pages that scroll inside an inner box: the document is no taller than the window, but a big box scrolls
+    const vh = root.innerHeight;
+    if (docH <= vh + 4) { const inner = [...doc.querySelectorAll('body *')].find(el => el.scrollHeight > el.clientHeight + vh && /(auto|scroll)/.test(root.getComputedStyle(el).overflowY) && el.clientHeight > vh * .5);
+      if (inner) problems.push('the page scrolls inside an inner container (' + inner.tagName.toLowerCase() + '), not the window: its height cannot be measured'); }
+    const hdr = all(o.header).map(el => ({ el, b: boxOf(el.getBoundingClientRect()) })).find(h => h.b.top < 160 && h.b.right - h.b.left > W * .6);
+    const top = hdr ? r3(hdr.b.bottom) : 0;
+    const ftr = all(o.footer).map(el => ({ el, b: boxOf(el.getBoundingClientRect()) })).filter(f => f.b.top > docH * .4).sort((a, b) => a.b.top - b.b.top)[0];
+    const foot = Math.min(ftr ? r3(ftr.b.top) : docH, o.maxHeight);
+    if (!hdr) notes.push('no page header found: vines may grow up to the page top');
+    if (!ftr) notes.push('no footer found: the page bottom is taken as the footer');
+    if (docH > o.maxHeight) notes.push('the page is ' + Math.round(docH) + ' px tall: vines are planned for the first ' + o.maxHeight + ' px only');
+    const text = [], objs = [], cap = o.maxHeight + 400, keep = b => b.bottom > 0 && b.top < cap && b.right > 0 && b.left < W;
+    const tw = doc.createTreeWalker(doc.body, 4), vis = new Map();
+    for (let n = tw.nextNode(); n; n = tw.nextNode()) { if (!n.nodeValue.trim()) continue; const p = n.parentElement; if (!p) continue;
+      if (!vis.has(p)) vis.set(p, !ignored(p) && !/^(SCRIPT|STYLE|NOSCRIPT|TEMPLATE)$/.test(p.tagName) && visible(p) && !fixedUp(p)); if (!vis.get(p)) continue;
+      const rg = doc.createRange(); rg.selectNodeContents(n); for (const r of rg.getClientRects()) if (r.width >= 2 && r.height >= 2) { const b = boxOf(r); if (keep(b)) text.push(b); } }
+    all(o.objects).forEach(el => { const r = el.getBoundingClientRect(); if (r.width > 0 && r.height > 0) { const b = boxOf(r); if (keep(b)) objs.push(b); } });
+    // an object as wide as the page is a full-bleed band (a hero image, a coloured strip): kept as an object, so vines keep out of its rows
+    return { W, docH, top, foot, text, objs, notes, problems, vh };
+  }
+
+  // the margins in px: the free space left and right of everything, measured over the rows that hold content (a rare wide box does not decide it)
+  function margins(s) {
+    const band = 16, n = Math.max(1, Math.ceil((s.foot - s.top) / band)), L = new Array(n).fill(s.W), R = new Array(n).fill(s.W), full = new Array(n).fill(false);
+    const add = (b, isObj) => { if (b.bottom <= s.top || b.top >= s.foot) return; const a = Math.max(0, Math.floor((b.top - s.top) / band)), z = Math.min(n - 1, Math.floor((b.bottom - s.top) / band));
+      for (let i = a; i <= z; i++) { if (isObj && b.right - b.left > s.W * .92) { full[i] = true; continue; } L[i] = Math.min(L[i], Math.max(0, b.left)); R[i] = Math.min(R[i], Math.max(0, s.W - b.right)); } };
+    s.text.forEach(b => add(b, false)); s.objs.forEach(b => add(b, true));
+    const q = (arr, p) => { const v = arr.filter((x, i) => x < s.W && !full[i]).sort((a, b) => a - b); return v.length ? v[Math.floor(v.length * p)] : 0; };
+    return { left: q(L, .1), right: q(R, .1), fullBleedRows: full.filter(Boolean).length, rows: n };
+  }
+
+  // boxes -> grid at stitch size u with the content edge on a lattice line (m px from the left). Same grid format as measure().
+  function rasterize(s, u, m, textPad, objectPad) {
+    textPad = textPad == null ? 1 : textPad; objectPad = objectPad == null ? 1.5 : objectPad;
+    const C = Math.max(1, Math.round((s.W - 2 * m) / u)); u = (s.W - 2 * m) / C;
+    const cStart = -Math.ceil(m / u), cEnd = Math.ceil((s.W - m) / u), NC = cEnd - cStart, NR = Math.ceil(s.foot / u) + 15, mask = new Uint8Array(NC * NR), E = 1e-6;
+    const mark = (b, pad, kind) => { const p = pad * u, x0 = b.left - p, x1 = b.right + p, y0 = b.top - p, y1 = b.bottom + p;
+      const c0 = Math.max(cStart, Math.floor((x0 - m) / u + E)), c1 = Math.min(cEnd - 1, Math.ceil((x1 - m) / u - E) - 1), r0 = Math.max(0, Math.floor(y0 / u + E)), r1 = Math.min(NR - 1, Math.ceil(y1 / u - E) - 1);
+      for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) { const k = r * NC + c - cStart; if (mask[k] < kind) mask[k] = kind; } };
+    s.text.forEach(b => mark(b, textPad, 1)); s.objs.forEach(b => mark(b, objectPad, 2));
+    mark({ left: 0, right: s.W, top: s.top - 1, bottom: s.top }, 0, 2); mark({ left: 0, right: s.W, top: s.foot, bottom: s.foot + 1 }, 0, 2);   // the lines a vine keeps clear of
+    const grid = []; for (let r = 0; r < NR; r++) { let t = ''; for (let c = 0; c < NC; c++) t += mask[r * NC + c]; grid.push(t); }
+    return { ok: true, u, m, W: s.W, top: s.top, foot: s.foot, heads: [], rows: [], C, R: NR, c0: cStart, grid, textClear: true, notes: s.notes.slice() };
+  }
+
+  root.StitchVinesAdapter = { measure, snapshot, ready, contrast, defaults, scan, margins, rasterize };
 })(typeof window !== 'undefined' ? window : globalThis);
