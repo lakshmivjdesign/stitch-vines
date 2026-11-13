@@ -12,6 +12,6 @@ const { chromium } = require('playwright');
   await p.waitForTimeout(700);
   const after = await p.evaluate(() => [document.documentElement.scrollHeight, [...document.querySelectorAll('h1,h2,figure,.card,footer')].map(e => Math.round(e.getBoundingClientRect().top + scrollY)), window.__cls, (() => { const s = document.getElementById('stitch-vines-layer'); return s ? { aria: s.getAttribute('aria-hidden'), pe: getComputedStyle(s).pointerEvents, z: getComputedStyle(s).zIndex } : null; })()]);
   console.log(JSON.stringify({ page, W, look, state: st.status.state, msg: st.status.message, waitedMs: Date.now() - t0, stats: st.stats, heightBefore: before[0], heightAfter: after[0], moved: JSON.stringify(before[1]) !== JSON.stringify(after[1]), cls: after[2], layer: after[3], errors: errs }));
-  await p.screenshot({ path: `/tmp/shots/${page}-${W}-${look}.png`, fullPage: true });
+  await p.screenshot({ path: `/tmp/shots/${page}-${W}-${look}.png` }); await p.evaluate(() => window.scrollTo(0, 800)); await p.waitForTimeout(150); await p.screenshot({ path: `/tmp/shots/${page}-${W}-${look}-2.png` });
   await b.close();
 })();
