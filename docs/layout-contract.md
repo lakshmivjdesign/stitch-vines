@@ -35,7 +35,7 @@ Column `c` covers x from `m + c*u` to `m + (c+1)*u` (css px, page coordinates); 
 
     const ctx = StitchVinesAdapter.measure(options);   // after: await StitchVinesAdapter.ready()  (fonts and images loaded)
 
-It returns `ctx` as above, plus `ok` (false when no section was found: the generator needs at least one heading followed by a row of cards or images), `notes` (plain-language warnings), and the plain data `C`, `R`, `c0`, `grid` that recorded layouts hold. `StitchVinesAdapter.snapshot(ctx)` returns the data version without `cell`.
+It returns `ctx` as above, plus `textClear`, `textColours` (the text colours found, most used first, with whether the text is large) and `ok` (false when no section was found: the generator needs at least one heading followed by a row of cards or images), `notes` (plain-language warnings), and the plain data `C`, `R`, `c0`, `grid` that recorded layouts hold. `StitchVinesAdapter.snapshot(ctx)` returns the data version without `cell`. `StitchVinesAdapter.contrast(colourA, colourB)` returns the WCAG contrast ratio of two CSS colours.
 
 | option | default | meaning |
 |---|---|---|
@@ -54,6 +54,8 @@ It returns `ctx` as above, plus `ok` (false when no section was found: the gener
 | `rules` | header bottom edge, footer top edge | thin lines across the content width, padded 1.5 stitches, marked 2 |
 | `text` | all text in `scope` | selector limiting where text counts |
 | `ignore` | `[data-stitch-ignore]` | never measured (the vine overlay, status notes) |
+| `textClear` | `true` | vines keep out of text; the adapter sets `ctx.textClear`, the generator then treats text cells as blocked (rule 12b). `false`: vines may pass under words |
+| `vineColours` | none | with `textClear: false`: CSS colours the vines will use; `ctx.notes` says which fail WCAG 1.4.3 against the page's text colours |
 | `textPad`, `objectPad` | `1`, `1.5` | padding in stitches |
 
 Text boxes come from real line boxes (text ranges), so a paragraph is a block and a heading is only as wide as its words. Objects win over text where they overlap. Links and navigation are text, not objects; add `nav` to `objects` for a bar that should be solid.

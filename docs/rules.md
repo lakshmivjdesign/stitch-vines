@@ -22,6 +22,7 @@ These are the design rules the generator grows by and the checker measures. Numb
 10. **Nothing touches unless it is joined.** Between two parts that belong to different branches (or are not joined) there is at least one empty stitch.
 11. **Nothing above the top limit** the page gives (for example the bottom of a navigation bar) and nothing off the page.
 12. **Text and objects.** Vines sit under words and under objects. A rose or bud may have at most a quarter of itself under words or under an object. A limb may pass under an object only in its middle: its start, its end, its spiral and everything attached to it stay in the open. Small objects (buttons, carousel arrows) hide only their core: a vine may cross their padding.
+12b. **Text stays clear (option `textClear`, on by default in the adapter).** No part of any limb lies on words or within a stitch of them. This is the safe reading of the contrast rule (WCAG 1.4.3: 4.5:1 for normal text, 3:1 for large text, 24 px or 18.66 px bold): a vine behind a word changes that word's background, so every vine colour that can overlap text must keep that contrast against the text colour, or must not overlap it at all. Rule 12's allowance for roses and buds under words only stands when their colour passes; the demo's charcoal (1.03:1 against the demo's text) and zentangle ink (1.2:1) never would. The checker measures this as check 12t.
 13. **Left and right sides stay apart:** the two margin vines never meet, and the middle of the page stays open.
 
 ## How much
@@ -33,4 +34,4 @@ These are the design rules the generator grows by and the checker measures. Numb
 
 ## What the checker measures
 
-Checks 1 to 11 (geometry) fail the run: no touching, free ends, bend radius, curves, tangent departure and lean, joined organs, top limit, flower cover, hidden parts only in the middle, leaves and roses, 3 elements per branch. Checks 12 and 13 (branch counts, flowers appear) are composition targets and only warn unless run with `--strict`.
+Checks 1 to 11 (geometry) fail the run: no touching, free ends, bend radius, curves, tangent departure and lean, joined organs, top limit, flower cover, hidden parts only in the middle, leaves and roses, 3 elements per branch. Check 12t (only when the layout says `textClear`) also fails the run: no stitch under words. Checks 12 and 13 (branch counts, flowers appear) are composition targets and only warn unless run with `--strict`.
