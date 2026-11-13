@@ -9,4 +9,5 @@ function ctxOf(rec, vi) {
   return { u: v.u, m: v.m, W: rec.W, top: rec.top, foot: rec.foot, C: v.C, R: v.R, c0: v.c0, cStart: v.c0, cEnd, grid, heads: v.heads || [], rows: v.rows || [], textClear: !rec.own,
     cell: (c, r) => (c < v.c0 || c >= cEnd || r < 0 || r >= grid.length) ? 0 : +(grid[r][c - v.c0] || 0), margins: rec.margins, notes: rec.notes, problems: rec.problems, name: rec.name };
 }
-module.exports = { list, read, ctxOf };
+const withVariants = rec => { const c = ctxOf(rec, 0); c.variants = rec.v.map((_, i) => ctxOf(rec, i)); return c; };
+module.exports = { withVariants, list, read, ctxOf };

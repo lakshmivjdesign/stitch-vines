@@ -9,7 +9,8 @@
        cell(c, r) -> 0 free | 1 text (a vine may pass under words, unless ctx.textClear is set: then it may not) | 2 object (card, image, button: a vine may pass under its middle only)
    Output: an array of polylines [[x, y], ...] in stitch units (a cell's centre is an integer), with .limbs describing every limb for tests/check.js.
    Status: first public cut, taken from one site's working copy; see docs/roadmap.md. */
-window.StitchVines = function (ctx) {
+window.StitchVinesPlan = function (ctx) {
+  if (!(ctx.heads && ctx.heads.length && ctx.rows && ctx.rows.length)) return window.StitchVinesGeneral(ctx);       // a page without headings-and-rows: the general planner
   const E = window.StitchVinesEngine(ctx);
   const { u, m, W, foot, heads, cs, ce, C, rowMin, rowFoot, NR, kindAt, cardRows, limbs, margins, stats, rnd, rr, seedFor, marginVine, placeLimb, mirror, tryOrgan, mkLeaf, mkRose, mkBud, DS, MINR, D } = E;
   /* ---- the sections: a heading, its intro, then the card row ---- */
@@ -39,12 +40,10 @@ window.StitchVines = function (ctx) {
   if (!L0 || !R0) { const o = []; o.limbs = limbs; return o; }                                             // a screen too narrow for margin vines grows none
   makePlan().forEach(sp => placeLimb(sp, margins[sp.side]));
 
-  /* ---- leaves along the margin vines, last: up, alternating, larger in the middle and thinning toward both ends ---- */
-  [L0, R0].forEach(L => { seedFor(L.name + '#leaves'); const n = L.P.length - 1, total = L.S[n]; let s = 12, k = 0;                             // the margin strip is a few stitches wide: the leaves face inward
-    while (s < total - 30) { const t = s / total, sz = Math.max(6, 7 + 5 * Math.sin(Math.PI * t)), i = Math.round(s / DS);
-      const o = tryOrgan(L, mkLeaf, i, [L.sg], [sz, sz * .85, sz * .7].filter(v => v >= 5), { angs: [50, 38, 62] }); if (o) { s += 12 + k % 2 * 4 + 6 * Math.abs(.5 - t); k++; } else s += 2; } });
-
-  const out = []; limbs.forEach(L => { out.push(L.head.concat(L.stem, L.tail.slice(1))); L.organs.forEach(o => o.polys.forEach(p => out.push(p))); });
-  out.limbs = limbs; stats.limbs = limbs.length; return out;
+  /* ---- leaves along the margin vines, last ---- */
+  [L0, R0].forEach(L => E.marginLeaves(L));
+  return E.finish();
 };
 
+/* The one entry point: StitchVines(ctx) -> polylines with .limbs and .status. ctx may carry ctx.variants (the same page at several stitch sizes). */
+window.StitchVines = function (ctx, opt) { return window.StitchVinesFit(ctx, opt); };

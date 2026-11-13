@@ -23,8 +23,8 @@ window.StitchVinesEngine = function (ctx) {
 
   /* ---- the sections: a heading, its intro, then the card row; the vines work around the heading ---- */
   const cardRows = (ctx.rows || []).map(r => [Math.floor(r.top / u), Math.ceil(r.bottom / u)]);
-  const edgeL = (() => { let e = 0; for (let r = cardRows[0][0] + 2; r < cardRows[0][1] - 2; r += 4) for (let c = cs; c < 10; c++) if (kindAt(c, r) === 2) { e = Math.min(e, c); break; } return e; })();      // the first stitch column a card covers, on the left
-  const edgeR = (() => { let e = C; for (let r = cardRows[0][0] + 2; r < cardRows[0][1] - 2; r += 4) for (let c = ce - 1; c > C - 10; c--) if (kindAt(c, r) === 2) { e = Math.max(e, c); break; } return e; })();   // and on the right
+  const edgeL = !cardRows.length ? 0 : (() => { let e = 0; for (let r = cardRows[0][0] + 2; r < cardRows[0][1] - 2; r += 4) for (let c = cs; c < 10; c++) if (kindAt(c, r) === 2) { e = Math.min(e, c); break; } return e; })();      // the first stitch column a card covers, on the left
+  const edgeR = !cardRows.length ? C : (() => { let e = C; for (let r = cardRows[0][0] + 2; r < cardRows[0][1] - 2; r += 4) for (let c = ce - 1; c > C - 10; c--) if (kindAt(c, r) === 2) { e = Math.max(e, c); break; } return e; })();   // and on the right
 
   /* ---- the parts: leaf (two arcs and a vein on a curved S2 stalk), rose (scalloped ring and spiral), bud (lens, spiral and two sepals) ---- */
   const rot = (pts, ox, oy, a) => pts.map(([x, y]) => [ox + x * Math.cos(a) - y * Math.sin(a), oy + x * Math.sin(a) + y * Math.cos(a)]);
@@ -85,28 +85,29 @@ window.StitchVinesEngine = function (ctx) {
   const pure = (x, y, th, kf, total) => { const P = [[x, y]], TH = [th]; let s = 0; while (s < total - 1e-9) { const k = kf(s + DS / 2); th += k * DS / 2; x += Math.cos(th) * DS; y += Math.sin(th) * DS; th += k * DS / 2; s += DS; P.push([x, y]); TH.push(th); } return { P, TH }; };
   const spiralPure = (x, y, th, sgn, r0) => { const pts = [[x, y]]; let ph = 0; for (let n = 0; n < 900; n++) { const r = r0 * Math.pow(PHI, -ph / Math.PI); if (r < 2.4) break; const dph = DS / r; th += sgn * dph / 2; x += Math.cos(th) * DS; y += Math.sin(th) * DS; th += sgn * dph / 2; ph += dph; pts.push([x, y]); } return pts; };
   const margins = {};
-  function marginVine(sg) {                                                             // sg +1: the left margin (curls to the right at the top), -1: the right margin
-    const xIn = sg > 0 ? edgeL - 1.9 : edgeR + 1.9, xOut = sg > 0 ? cs + 1 : ce - 2; if (Math.abs(xIn - xOut) < .8) { stats.fail.push('margin ' + sg + ' too narrow ' + xIn + ' ' + xOut); return null; }     // no room for a margin vine (narrow screens): none is grown
-    const xc = (xIn + xOut) / 2, A = Math.max(.5, Math.min(3.2, Math.abs(xIn - xOut) / 2)), Lr = 12, La = 15;
-    for (const dBot of [0, 6, 12, 20]) for (const NW of [17, 23, 31, 41]) for (const r0 of [9.5, 8.5, 7.5, 6.8]) for (const dTop of [0, 3, 6, 10, 15]) for (const [hs, rh] of [[1, 6.2]]) {
-      const k1 = 1 / r0, dR = Lr / (2 * rh), th0 = -Math.PI / 2 - hs * sg * dR, yStart = rowFoot + 3 - dBot;                              // the vine runs down beside the footer rule and ends in a bud, so the space above the footer has a long stem to branch from
+  function marginVine(sg, o = {}) {                                                             // sg +1: the left margin (curls to the right at the top), -1: the right margin
+    const xIn = o.xIn ?? (sg > 0 ? edgeL - 1.9 : edgeR + 1.9), xOut = o.xOut ?? (sg > 0 ? cs + 1 : ce - 2), yBot = o.yBot ?? rowFoot, yTop = o.yTop ?? rowMin, nm = o.name || (sg > 0 ? 'margin-L' : 'margin-R'); if (Math.abs(xIn - xOut) < .8) { stats.fail.push('margin ' + sg + ' too narrow ' + xIn + ' ' + xOut); return null; }     // no room for a margin vine (narrow screens): none is grown
+    const bud = o.term === 'bud', xc = (xIn + xOut) / 2, A = Math.max(.5, Math.min(3.2, Math.abs(xIn - xOut) / 2)), Lr = 12, La = 15;
+    for (const dBot of [0, 6, 12, 20]) for (const NW of (o.NWs || [17, 23, 31, 41])) for (const r0 of [9.5, 8.5, 7.5, 6.8]) for (const dTop of [0, 3, 6, 10, 15]) for (const [hs, rh] of [[1, 6.2]]) {
+      const k1 = 1 / r0, dR = Lr / (2 * rh), th0 = -Math.PI / 2 - hs * sg * dR, yStart = yBot + 3 - dBot;                              // the vine runs down beside the footer rule and ends in a bud, so the space above the footer has a long stem to branch from
       const make = lam => { const om = TAU / lam, kw = A * om * om, wEnd = NW * lam / 2, k0 = sg * kw;                      // the heading wobbles around straight up; the wave ends upright and bending inward
         const kf = s => { if (s < Lr) { const q = Math.cos(Math.PI * s / (2 * Lr)); return hs * sg / rh * q * q; } const w = s - Lr; if (w < wEnd) return -sg * kw * Math.cos(om * w);
           const a = Math.min(1, (w - wEnd) / La), q = Math.sin(Math.PI * a / 2); return k0 + (sg * k1 - k0) * q * q; };       // the arch: curvature rises smoothly to 1/r0, where the spiral takes over
-        return { kf, total: Lr + wEnd + La, wEnd }; };
+        return { kf, total: Lr + wEnd + (bud ? 0 : La), wEnd }; };
       let lam = 58, fit = null;
-      for (let it = 0; it < 10; it++) { const mk = make(lam), g = pure(0, yStart, th0, mk.kf, mk.total), e = g.P.length - 1, tl = spiralPure(g.P[e][0], g.P[e][1], g.TH[e], sg, r0);
-        const apex = Math.min(...g.P.map(p => p[1]), ...tl.map(p => p[1])), want = yStart - (rowMin + 2.5 + dTop), ext = yStart - apex; fit = { mk, g }; if (Math.abs(ext - want) < .25) break; lam *= want / ext; }
-      if (A * Math.pow(TAU / lam, 2) < .035) continue;                                       // a margin strip that narrow needs a shorter wave, or the bends are too faint to read as curves
+      for (let it = 0; it < 10; it++) { const mk = make(lam), g = pure(0, yStart, th0, mk.kf, mk.total), e = g.P.length - 1, tl = bud ? [] : spiralPure(g.P[e][0], g.P[e][1], g.TH[e], sg, r0);
+        const apex = Math.min(...g.P.map(p => p[1]), ...tl.map(p => p[1])), want = yStart - (yTop + 2.5 + dTop), ext = yStart - apex; fit = { mk, g }; if (Math.abs(ext - want) < .25) break; lam *= want / ext; }
+      if (A * Math.pow(TAU / lam, 2) < .042) continue;                                       // a margin strip that narrow needs a shorter wave, or the bends are too faint to read as curves
       if (lam < 22 || lam > 90) { stats.fail.push('margin ' + sg + ' lam ' + lam.toFixed(1)); continue; }
       const wv = fit.g.P.slice(Math.round(Lr / DS), Math.round((Lr + fit.mk.wEnd) / DS)), x0 = xc - (Math.min(...wv.map(p => p[0])) + Math.max(...wv.map(p => p[0]))) / 2;
       const g = grow(x0, yStart, th0, fit.mk.kf, fit.mk.total, 0, [0, 0], 0); if (g.stop >= 0) { stats.fail.push('margin ' + sg + ' stem stopped at ' + g.P[g.stop].map(v => v.toFixed(1))); continue; }
-      const L = { id: ++limbSeq, name: sg > 0 ? 'margin-L' : 'margin-R', kind: 'margin', side: sg > 0 ? 'L' : 'R', sg, band: -1, parent: null, term: 'spiral', P: g.P, TH: g.TH, S: g.S, K: g.K, stem: g.P, organs: [], head: [], tail: [], children: [] };
+      const L = { id: ++limbSeq, name: nm, kind: 'margin', side: sg > 0 ? 'L' : 'R', sg, band: -1, parent: null, term: 'spiral', P: g.P, TH: g.TH, S: g.S, K: g.K, stem: g.P, organs: [], head: [], tail: [], children: [] };
       L.sid = newEl(L, 'stem', [x0, yStart], 8); claim(L.sid, cellsOf([g.P]), []);
-      const e = g.P.length - 1, tl = spiralFrom(g, e, sg, r0, L.sid, g.P[e], 9, false); if (tl.turns < .9) { release(L.sid); if (stats.fail.length < 6) stats.fail.push('margin ' + sg + ' top spiral ' + tl.turns.toFixed(2) + ' ' + tl.why); continue; }
+      const e = g.P.length - 1, tl = bud ? { pts: [g.P[e]], turns: 1, why: '' } : spiralFrom(g, e, sg, r0, L.sid, g.P[e], 9, false); if (tl.turns < .9) { release(L.sid); if (stats.fail.length < 6) stats.fail.push('margin ' + sg + ' top spiral ' + tl.turns.toFixed(2) + ' ' + tl.why); continue; }
       claim(L.sid, els[L.sid].mine.concat(cellsOf([tl.pts])), []);
-      L.tail = tl.pts; L.head = []; L.r0 = r0; limbs.push(L); margins[L.side] = L;
-      if (!tryOrgan(L, mkBud, 0, [0], [9, 7.5, 6], { ang: 0, back: true, role: 'base' })) { limbs.pop(); delete margins[L.side]; release(L.sid); stats.fail.push('margin ' + sg + ' base bud'); continue; }
+      L.tail = bud ? [] : tl.pts; L.head = []; L.r0 = r0; L.term = bud ? 'bud' : 'spiral'; limbs.push(L); if (!o.seg) margins[L.side] = L;
+      if (bud && !tryOrgan(L, mkBud, e, [0], [8, 6.5, 5.5, 4.5], { ang: 0, role: 'terminal' })) { limbs.pop(); release(L.sid); stats.fail.push('margin ' + sg + ' top bud'); continue; }
+      if (!tryOrgan(L, mkBud, 0, [0], [9, 7.5, 6, 5, 4.5], { ang: 0, back: true, role: 'base' })) { limbs.pop(); if (!o.seg) delete margins[L.side]; release(L.sid); stats.fail.push('margin ' + sg + ' base bud'); continue; }
       return L; }
     return null; }
 
@@ -203,6 +204,10 @@ window.StitchVinesEngine = function (ctx) {
     return L.organs.length + (spec.term === 'spiral' ? 1 : 0) >= (spec.minEl ?? 3); }
 
   function mirror(side, x) { return side === 'L' ? x : (C - 1) - x; }
+  function marginLeaves(L) { seedFor(L.name + '#leaves'); const n = L.P.length - 1, total = L.S[n]; let s = 12, k = 0;                             // the margin strip is a few stitches wide: the leaves face inward
+    while (s < total - 30) { const t = s / total, sz = Math.max(6, 7 + 5 * Math.sin(Math.PI * t)), i = Math.round(s / DS);
+      const o = tryOrgan(L, mkLeaf, i, [L.sg], [sz, sz * .85, sz * .7].filter(v => v >= 5), { angs: [50, 38, 62] }); if (o) { s += 12 + k % 2 * 4 + 6 * Math.abs(.5 - t); k++; } else s += 2; } }
+  const finish = () => { const out = []; limbs.forEach(L => { out.push(L.head.concat(L.stem, L.tail.slice(1))); L.organs.forEach(o => o.polys.forEach(p => out.push(p))); }); out.limbs = limbs; stats.limbs = limbs.length; return out; };
   return { ctx, u, m, W, foot, heads, cell, textClear, PHI, D, TAU, MINR, DS, cs, ce, NC, C, rowMin, rowFoot, NR, kindAt, hid, cardRows, limbs, margins, stats, rnd, rr, seedFor,
-    marginVine, placeLimb, mirror, tryOrgan, mkLeaf, mkRose, mkBud, edgeL, edgeR };
+    marginVine, marginLeaves, finish, placeLimb, mirror, tryOrgan, mkLeaf, mkRose, mkBud, edgeL, edgeR };
 };

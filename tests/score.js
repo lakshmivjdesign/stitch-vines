@@ -3,20 +3,20 @@
 //   node tests/score.js                 all layouts, 4 at a time        node tests/score.js wikipedia 910   one site, one width
 //   --file dist/vine-grow.js   --json out.json   --v 1 (use the 5.5 px variant)   --quiet
 const fs = require('fs'), path = require('path'), cp = require('child_process');
-const { list, read, ctxOf } = require('./sites.js'), { run } = require('./harness.js'), { check } = require('./check.js');
+const { list, read, ctxOf, withVariants } = require('./sites.js'), { run } = require('./harness.js'), { check } = require('./check.js');
 const args = process.argv.slice(2); let file = path.join(__dirname, '..', 'dist', 'vine-grow.js'), json = null, vi = 0, quiet = false, one = null; const pos = [];
 for (let i = 0; i < args.length; i++) { if (args[i] === '--file') file = path.resolve(args[++i]); else if (args[i] === '--json') json = args[++i]; else if (args[i] === '--v') vi = +args[++i]; else if (args[i] === '--quiet') quiet = true; else if (args[i] === '--one') one = args[++i]; else pos.push(args[i]); }
 
 function scoreOne(f) {
   const rec = read(f.file), row = { site: f.name, W: f.W, own: !!rec.own };
   try {
-    const ctx = ctxOf(rec, vi); row.u = +ctx.u.toFixed(2); row.marginSt = +(ctx.m / ctx.u).toFixed(1);
-    const out = run(file, ctx); row.ms = out.ms; row.limbs = (out.limbs || []).length; row.rung = out.rung ?? null; row.status = out.status || null;
+    const ctx = withVariants(rec); row.marginSt = +(ctx.m / ctx.u).toFixed(1);
+    const out = run(file, ctx); row.u = +(out.u || ctx.u).toFixed(2); const cu = ctx.variants.find(v => v.u === out.u) || ctx; row.ms = out.ms; row.limbs = (out.limbs || []).length; row.rung = out.rung ?? null; row.status = out.status ? out.status.message : null;
     const sides = new Set((out.limbs || []).filter(l => l.kind === 'margin').map(l => l.side)); row.margins = [...sides].join('');
-    const res = check(out, ctx), bad = res.filter(r => !r.pass && r.id !== 12 && r.id !== 13);
+    const res = check(out, cu), bad = res.filter(r => !r.pass && r.id !== 12 && r.id !== 13);
     row.fail = bad.map(r => r.id).join(',');
     row.real = row.limbs >= 2 && sides.size === 2; row.geometry = bad.length === 0; row.pass = row.real && row.geometry;
-    row.why = (out.debug && out.debug.fail || []).slice(0, 2).join(' | ');
+    row.why = (out.status && !out.status.ok && out.status.message || '').slice(0, 160);
   } catch (e) { row.crash = String(e.message || e).split('\n')[0].slice(0, 90); row.pass = false; row.limbs = 0; }
   return row;
 }
