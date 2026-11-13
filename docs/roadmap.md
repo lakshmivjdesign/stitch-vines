@@ -1,5 +1,7 @@
 # Roadmap
 
+**v0.2 (13 Nov 2026) done:** engine split from planner, a general planner that works from free space (no headings needed), automatic stitch size, margin vines cut into pieces, bud tops for narrow strips, never a lone vine, a stricter checker, a test set of 116 layouts with a scorer, one-file build with worker, cache and three looks, studio page, PROMPT.md, SKILL.md, docs. The list below is the older roadmap; items marked are what is still open.
+
 In order of what unlocks the most.
 
 1. **A page adapter. Done, with limits.** `src/page-adapter.js` builds `ctx` from a live page by CSS selectors; `tools/record-layout.js` records any URL as a layout for the checker. Checked on the demo page (700 to 1920 px) and a renamed copy of it. Tried on three real sites and failed on all three (see README, Status). Open: tell the user *why* the generator returned nothing (see 8); sections other than "heading plus row of cards" (see 4); carousels clipped by overflow.
@@ -15,3 +17,5 @@ In order of what unlocks the most.
    - Real-site failures to fix in the adapter: pages that scroll inside an inner container (document height is wrong); columns that are not centred (sidebars); no side margin at all; headings that are not followed by a row of images. `ready()` hung for ever on a page whose load event never came; fixed (it now stops waiting after 8 s).
    - With text kept clear, the left side of the page gets no branches (text is left-aligned there) and the margin vine needs about 20 empty rows above the first text.
    - Only side margins of 40 and 72 px have been tried (5 and 11 stitches). Wider margins, for example a centred column on a wide screen, are untried (guessing: the margin vines may need tuning there).
+
+9. **Open after v0.2.** (a) Narrow strips: pages whose free strip is only 5 to 8 stitches beside text still often fail (6 of 116 test layouts); the first bend and the base bud do not fit. (b) Between-section branches in gaps shorter than about 16 rows are not grown. (c) Planning time on very long pages on slow phones (a 15 s cut-off and a 3 s branch budget exist). (d) The cross stitch look is not yet the author's white thread on dots. (e) Content that changes after load needs `stitchVines.refresh()`. (f) Zentangle and quilling looks were dropped from the product (they remain in `demo/`).

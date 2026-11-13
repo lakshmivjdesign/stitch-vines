@@ -18,6 +18,7 @@
     cache: true,                  // remember the result per page and width in localStorage
     status: null,                 // css selector of an element whose text shows the status message
     auto: true,                   // start by itself when the page has loaded
+    toast: false,                 // show the status in a small note in the corner (used by the bookmarklet); it fades after 8 seconds
     debug: false
   };
   const cfg = Object.assign({}, defaults, window.StitchVinesConfig || {});
@@ -27,6 +28,7 @@
   const api = window.stitchVines = { config: cfg, status: { state: 'idle', message: 'Not started.' }, stats: {} };
 
   const say = (state, message, extra) => { api.status = Object.assign({ state, message }, extra || {}); const el = cfg.status && document.querySelector(cfg.status); if (el) el.textContent = message;
+    if (cfg.toast) { let t = document.getElementById('stitch-vines-toast'); if (!t) { t = document.createElement('div'); t.id = 'stitch-vines-toast'; t.setAttribute('role', 'status'); t.setAttribute('data-stitch-ignore', ''); t.style.cssText = 'position:fixed;left:12px;bottom:12px;max-width:340px;z-index:2147483647;background:#fff;color:#111;border:1px solid #888;border-radius:6px;padding:8px 12px;font:14px/1.4 system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.25)'; document.body.appendChild(t); } t.textContent = message; t.style.display = 'block'; clearTimeout(t._h); if (state !== 'working') t._h = setTimeout(() => { t.style.display = 'none'; }, 8000); }
     if (cfg.debug) console.info('[stitch-vines] ' + state + ': ' + message); try { document.dispatchEvent(new CustomEvent('stitchvines:status', { detail: api.status })); } catch (e) { /* old browser */ } };
   const clear = () => { const old = document.getElementById('stitch-vines-layer'); if (old) old.remove(); };
   const reduced = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;

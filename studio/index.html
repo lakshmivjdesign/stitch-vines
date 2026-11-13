@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Stitch vines studio</title>
+<meta name="description" content="Try hand-made vine backgrounds in three looks, preview them on your own page, and download the files.">
+<style>
+:root{--paper:#f6f1e4;--ink:#26231f;--muted:#5a5448;--line:#cfc6b0;--accent:#1d4ed8;--card:#fffdf7}
+@media (prefers-color-scheme:dark){:root{--paper:#1d1b18;--ink:#f1ece0;--muted:#bdb5a3;--line:#4a453c;--accent:#9db8ff;--card:#25221e}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:18px/1.6 Georgia,'Times New Roman',serif}
+a{color:var(--accent)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.skip{position:absolute;left:-999px;top:0;background:var(--ink);color:var(--paper);padding:8px 14px;z-index:10}.skip:focus{left:8px;top:8px}
+header,main,footer{max-width:720px;margin:0 auto;padding:0 24px}
+header{padding-top:28px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+h1{font:700 34px/1.2 system-ui,sans-serif;margin:8px 0 6px}
+h2{font:700 24px/1.3 system-ui,sans-serif;margin:48px 0 10px}
+p,li{max-width:62ch}
+.lead{font-size:20px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:18px 20px;margin:16px 0}
+fieldset{border:0;margin:0 0 14px;padding:0}legend{font:600 16px system-ui,sans-serif;padding:0;margin-bottom:6px}
+label{display:inline-flex;align-items:center;gap:8px;margin:0 18px 6px 0;font:16px system-ui,sans-serif;min-height:44px}
+input[type=radio],input[type=checkbox]{width:22px;height:22px;accent-color:var(--accent)}
+select{font:16px system-ui,sans-serif;padding:10px 12px;min-height:44px;background:var(--paper);color:var(--ink);border:1px solid var(--muted);border-radius:6px}
+button,.btn{font:600 16px system-ui,sans-serif;background:var(--ink);color:var(--paper);border:0;border-radius:6px;padding:12px 20px;min-height:44px;cursor:pointer;text-decoration:none;display:inline-block}
+button.secondary,.btn.secondary{background:transparent;color:var(--ink);border:2px solid var(--ink)}
+pre,code{font:15px/1.5 ui-monospace,Menlo,Consolas,monospace}pre{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:12px 14px;overflow:auto;white-space:pre-wrap;word-break:break-word}
+.small{font:15px/1.5 system-ui,sans-serif;color:var(--muted)}
+#status{font:15px/1.5 system-ui,sans-serif;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:8px 12px;margin:10px 0}
+ul.fit li{margin:4px 0}
+footer{padding-top:30px;padding-bottom:70px;border-top:1px solid var(--line);margin-top:48px;font:15px system-ui,sans-serif;color:var(--muted)}
+@media (max-width:600px){body{font-size:17px}h1{font-size:28px}header,main,footer{padding:0 18px}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the content</a>
+<header>
+  <h1>Stitch vines</h1>
+  <p class="lead">Hand-made vines that grow in the empty margins of a web page: one script, three looks, no server.</p>
+</header>
+<main id="main">
+  <p class="small">The vines you can see beside this page are drawn by the script itself, on this page. They are decoration: they sit behind the text, cannot be clicked, and are hidden from screen readers. On very narrow screens there may be no room for them, and then the note below says so.</p>
+
+  <h2 id="try">1. Try the looks</h2>
+  <div class="panel" role="group" aria-labelledby="try">
+    <fieldset><legend>Look</legend>
+      <label><input type="radio" name="look" value="cross" checked> Cross stitch</label>
+      <label><input type="radio" name="look" value="charcoal"> Charcoal</label>
+      <label><input type="radio" name="look" value="pencil"> Pencil</label>
+    </fieldset>
+    <fieldset><legend>The few tweaks</legend>
+      <label><input type="checkbox" id="textclear" checked> Keep vines away from text</label>
+      <label for="density" style="margin-right:6px">Branches</label>
+      <select id="density"><option value="sparse">Few (margin vines only)</option><option value="normal" selected>Normal</option><option value="rich">More, where there is room</option></select>
+    </fieldset>
+    <p id="status" role="status" aria-live="polite">Starting…</p>
+    <p class="small">Changing the look only redraws the same vines; nothing moves. Changing the other two grows the vines again.</p>
+  </div>
+
+  <h2 id="own">2. Preview it on your own page</h2>
+  <p>A web page cannot read another site from a link, so the preview runs in your own browser, on your own page. Two ways:</p>
+  <p><strong>A. Bookmarklet.</strong> Drag this link to your bookmarks bar, open your page, and click the bookmark: <a id="bookmarklet" href="#" class="btn secondary">Stitch vines preview</a> <span class="small">(it adds the script to the page you are on, for that visit only; reload to remove it)</span></p>
+  <p><strong>B. One line.</strong> In your page's developer console, paste:</p>
+  <pre id="oneline"></pre>
+  <p class="small">The note at the bottom left of your page says what happened. Some sites block this with a security policy; then it says so, and nothing changes.</p>
+
+  <h2 id="download">3. Download it</h2>
+  <p><button type="button" id="dl">Download kit (zip)</button> <span class="small" id="dlnote"></span></p>
+  <p class="small">The kit holds the script (<code>stitch-vines.js</code>), your settings from section 1 (<code>stitch-vines-config.js</code>), a README, and <code>PROMPT.md</code>, which you can paste into any AI assistant to have it set things up for you. Or take the files one by one: <a id="l1" href="../dist/stitch-vines.js" download>stitch-vines.js</a>, <a id="l2" href="../PROMPT.md" download>PROMPT.md</a>.</p>
+  <p>Setup is two lines before <code>&lt;/body&gt;</code> of your page:</p>
+  <pre>&lt;script src="stitch-vines-config.js"&gt;&lt;/script&gt;
+&lt;script src="stitch-vines.js" defer&gt;&lt;/script&gt;</pre>
+
+  <h2 id="fit">Will it fit my site?</h2>
+  <ul class="fit">
+    <li><strong>Fits:</strong> pages with empty side margins of about 24 px or more and some space left and right of the content. Portfolios, blogs, landing and article pages.</li>
+    <li><strong>Does not fit:</strong> full-bleed designs with no margin, pages that scroll inside a box instead of the window, pages with no free strip. It then says so and draws nothing.</li>
+    <li>It draws vines on both sides or on neither, never a lone vine.</li>
+    <li>On a test set of 116 page layouts, vines grew on 110. That is not a promise about your site: the note tells you what happened on yours.</li>
+  </ul>
+</main>
+<footer>Stitch vines is free and open source (MIT). Made with Claude.</footer>
+
+<script>window.StitchVinesConfig={look:'cross',textClear:true,density:'normal',status:'#status',ignore:'[data-stitch-ignore]'};</script>
+<script src="../dist/stitch-vines.js" defer></script>
+<script>
+(function(){
+  var $=function(s){return document.querySelector(s)};
+  var abs=new URL('../dist/stitch-vines.js',location.href).href;
+  function cfg(){var r=document.querySelector('input[name=look]:checked').value;return {look:r,textClear:$('#textclear').checked,density:$('#density').value}}
+  function cfgText(){var c=cfg();return "window.StitchVinesConfig = { look: '"+c.look+"', textClear: "+c.textClear+", density: '"+c.density+"' };\n"}
+  function refreshSnippets(){
+    var c=cfg();
+    var one="window.StitchVinesConfig={look:'"+c.look+"',textClear:"+c.textClear+",density:'"+c.density+"',toast:true};var s=document.createElement('script');s.src='"+abs+"';document.body.appendChild(s);";
+    $('#oneline').textContent=one;
+    $('#bookmarklet').href='javascript:(function(){'+encodeURI(one)+'})()';
+  }
+  document.addEventListener('change',function(e){
+    var sv=window.stitchVines; var c=cfg(); refreshSnippets();
+    if(!sv)return;
+    if(e.target.name==='look'){sv.setLook(c.look);return}
+    sv.config.textClear=c.textClear; sv.config.density=c.density; sv.refresh();
+  });
+  $('#bookmarklet').addEventListener('click',function(e){e.preventDefault();alert('Drag this link to your bookmarks bar instead of clicking it here.')});
+  refreshSnippets();
+  if(location.protocol==='file:')$('#dlnote').textContent='Downloading as a zip needs this page to be served over http(s); the single files below work from a folder.';
+
+  /* ---- a zip file made in the browser (files stored, not compressed) ---- */
+  var table=(function(){var t=[],c,n,k;for(n=0;n<256;n++){c=n;for(k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+  function crc(b){var c=0xFFFFFFFF;for(var i=0;i<b.length;i++)c=table[(c^b[i])&255]^(c>>>8);return (c^0xFFFFFFFF)>>>0}
+  function zip(files){
+    var enc=new TextEncoder(),parts=[],central=[],off=0;
+    files.forEach(function(f){var name=enc.encode(f.name),d=f.data,sum=crc(d);
+      var h=new DataView(new ArrayBuffer(30));h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint16(8,0,true);h.setUint16(10,0,true);h.setUint16(12,0x21,true);h.setUint32(14,sum,true);h.setUint32(18,d.length,true);h.setUint32(22,d.length,true);h.setUint16(26,name.length,true);h.setUint16(28,0,true);
+      parts.push(new Uint8Array(h.buffer),name,d);
+      var c=new DataView(new ArrayBuffer(46));c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint16(8,0x0800,true);c.setUint16(10,0,true);c.setUint16(12,0,true);c.setUint16(14,0x21,true);c.setUint32(16,sum,true);c.setUint32(20,d.length,true);c.setUint32(24,d.length,true);c.setUint16(28,name.length,true);c.setUint32(42,off,true);
+      central.push(new Uint8Array(c.buffer),name);off+=30+name.length+d.length});
+    var csize=central.reduce(function(a,p){return a+p.length},0),e=new DataView(new ArrayBuffer(22));e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,csize,true);e.setUint32(16,off,true);
+    return new Blob(parts.concat(central,[new Uint8Array(e.buffer)]),{type:'application/zip'});
+  }
+  function get(u){return fetch(u).then(function(r){if(!r.ok)throw new Error(u+' '+r.status);return r.arrayBuffer()}).then(function(b){return new Uint8Array(b)})}
+  $('#dl').addEventListener('click',function(){
+    var enc=new TextEncoder(),note=$('#dlnote');note.textContent='Making the zip…';
+    Promise.all([get('../dist/stitch-vines.js'),get('../PROMPT.md'),get('kit/README.md')]).then(function(r){
+      var blob=zip([{name:'stitch-vines-kit/stitch-vines.js',data:r[0]},{name:'stitch-vines-kit/stitch-vines-config.js',data:enc.encode(cfgText())},{name:'stitch-vines-kit/PROMPT.md',data:r[1]},{name:'stitch-vines-kit/README.md',data:r[2]}]);
+      var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='stitch-vines-kit.zip';document.body.appendChild(a);a.click();a.remove();note.textContent='Downloaded: stitch-vines-kit.zip';
+    }).catch(function(e){note.textContent='Could not make the zip ('+e.message+'). Use the single-file links below instead.'});
+  });
+})();
+</script>
+</body>
+</html>
