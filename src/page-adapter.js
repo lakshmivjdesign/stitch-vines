@@ -101,12 +101,16 @@
   // the plain data version of a ctx (what tests/fixtures/layout-*.json hold: `cell` replaced by `grid`)
   function snapshot(ctx) { const o = {}; ['u', 'm', 'W', 'top', 'foot', 'heads', 'rows', 'C', 'R', 'c0', 'grid', 'textClear'].forEach(k => { o[k] = ctx[k]; }); return o; }
 
-  // resolves when fonts and images have loaded, so the measured positions are the final ones
-  async function ready() {
-    const doc = root.document;
-    if (doc.readyState !== 'complete') await new Promise(res => root.addEventListener('load', res, { once: true }));
-    if (doc.fonts && doc.fonts.ready) await doc.fonts.ready;
-    await Promise.all([...doc.images].map(im => im.complete ? null : new Promise(res => { im.addEventListener('load', res, { once: true }); im.addEventListener('error', res, { once: true }); })));
+  // resolves when fonts and images have loaded, so the measured positions are the final ones.
+  // It gives up waiting after `timeout` ms (a page whose load event never comes would otherwise hang it for ever).
+  async function ready(timeout) {
+    const doc = root.document, limit = new Promise(res => setTimeout(res, timeout == null ? 8000 : timeout));
+    const work = (async () => {
+      if (doc.readyState !== 'complete') await new Promise(res => root.addEventListener('load', res, { once: true }));
+      if (doc.fonts && doc.fonts.ready) await doc.fonts.ready;
+      await Promise.all([...doc.images].map(im => im.complete ? null : new Promise(res => { im.addEventListener('load', res, { once: true }); im.addEventListener('error', res, { once: true }); })));
+    })();
+    await Promise.race([work, limit]);
   }
 
   root.StitchVinesAdapter = { measure, snapshot, ready, contrast, defaults };

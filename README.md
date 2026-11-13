@@ -47,14 +47,14 @@ Turn any live page into a recorded layout and check it (needs Playwright, a dev 
 
 ## Status
 
-Honest list of what is true today (all measured on 30 Oct 2026):
+Honest list of what is true today (measured 30 Oct to 13 Nov 2026):
 
-- **The adapter works on the demo page and on a copy of it with different class names** (selectors passed as options). It has **not** been tried on any real website yet.
-- The demo page was recorded at 700, 910, 1024, 1440 and 1920 px wide. The geometry checks (1 to 11) pass on all five, and on the five older recorded layouts. The composition checks (12 and 13) warn: at 700 and 910 px there are no branches and no rose in the space above the footer; at 1024, 1440 and 1920 px there is one branch a side there, not two or three.
-- **The generator is picky about the page.** The demo page had to be shaped to suit it: a first section with room above its first row of cards, and a footer whose left and right corners are empty just below its top line. When a margin vine cannot be placed the generator returns no vines at all (and the checker then reports "pass" on zero vines; see `docs/roadmap.md`). The adapter says nothing about this yet.
-- The adapter assumes sections made of a heading followed by a row of cards or images, equal side margins, and content that does not scroll sideways. Other layouts are roadmap item 4.
-- Generation takes about 1 to 3 seconds on the demo, in the checker and in the browser. It is run off the main thread in the demo so the page stays usable.
-- The demo was looked at in one browser (the Claude app's built-in Chromium) at 910 and 1440 px. Other browsers and phones are untested.
+- **Text stays clear by default.** The adapter marks every line of text and the generator keeps vines at least a stitch away from it (rule 12b, checker 12t). Only with `textClear: false` may vines pass under words, and then the adapter warns when a vine colour fails WCAG contrast against the page's text colour. With the demo's own text colour the contrast is 1.03:1 for charcoal, 1.2:1 for zentangle ink, 2 to 3.8:1 for the cross-stitch colours and 2.9 to 6.7:1 for quilling, so charcoal and zentangle must never sit under words.
+- **The demo page works.** Recorded at 700, 910, 1024, 1440 and 1920 px with text kept clear: geometry checks 1 to 11 and 12t pass at all five. The composition checks (12, 13) warn: only the right-hand side gets branches between sections (none on the left, where the text sits), and 700 and 910 px get no branches or roses in the space above the footer. The older recording (vines may pass under words) passes 1 to 11 as well.
+- **The demo had to be shaped to suit the generator:** about 150 px of empty space above the first heading (the left margin vine's top spiral needs it once text is blocked), room above the first row of cards, and empty footer corners. When a margin vine cannot be placed the generator returns no vines at all, and the checker then reports "pass" on zero vines (see `docs/roadmap.md`).
+- **Real websites: it did not work on any of the three tried.** (a) A long encyclopedia article: 24 px side margins at 910 px (3.7 stitches, too narrow for margin vines) and an off-centre column at 1440 px (264 px left, 44 px right); only 3 of 8 headings are followed by images. No vines. (b) A story-card grid: no section headings (the titles are `h3`/`h4` inside cards, not above rows) and at 910 px no side margin at all. No vines. (c) A shop page that scrolls inside inner containers, so the document is only 900 px tall and the adapter cannot see the real page. No vines. These are limits of the adapter and of the "heading plus row of cards" assumption, not of the pages.
+- Generation takes about 1.5 to 5 seconds on the demo; it is run off the main thread in the demo. On the 14,000 px article the generator needed 4 to 5 seconds just to say it cannot place margin vines.
+- The demo has four looks: cross stitch, charcoal, zentangle (inspired) and quilling (inspired). Looked at in one browser (the Claude app's built-in Chromium) at 910 and 1440 px.
 
 ## Licence
 
