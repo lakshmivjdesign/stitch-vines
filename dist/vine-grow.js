@@ -249,10 +249,10 @@ window.StitchVinesGeneral = function (ctx, opt) {
       const xIn = side === 'L' ? cs + edge2 - 1.9 : ce - 1 - edge2 + 1.9, xOut = side === 'L' ? cs + 1 : ce - 2;
       const A = Math.max(.5, Math.min(3.2, Math.abs(xIn - xOut) / 2)), lamMax = 2 * Math.PI * Math.sqrt(A / .042) - .5;
       const yBot = bot - 11, yTop = top + 1, H = yBot - yTop - 30;                      // 11 rows below the start for the base bud; 30 for the first lobe and the top arch
-      const nws = H > 20 ? oddNW(H, lamMax) : [];
+      const nws = H > 20 ? oddNW(H, lamMax) : []; (stats.pieces = stats.pieces || []).push(`${side}${k} rows ${top}-${bot} edge ${edge} strip ${xOut.toFixed(1)}..${xIn.toFixed(1)} H ${H} NWs ${nws.join(',')}`);
       if (!nws.length) { stats.fail.push(`margin ${side} piece ${top}-${bot}: height ${H} fits no wave`); return; }
       let L = marginVine(sg, { seg: true, name: `m${side}${k}`, xIn, xOut, yBot, yTop, NWs: nws.slice(0, 3), dBots: [0, 8, 16], r0s: [9.5, 8, 6.8], dTops: [0, 8] });
-      if (!L) { status.rung = Math.max(status.rung, 1); L = marginVine(sg, { seg: true, term: 'bud', name: `m${side}${k}`, xIn, xOut, yBot, yTop: yTop - 12, NWs: nws.slice(0, 3), dBots: [0, 8, 16], dTops: [0, 8] }); }   // rung 1: the top ends in a bud, not a spiral (a spiral needs about 14 stitches of room)
+      if (!L) { status.rung = Math.max(status.rung, 1); L = marginVine(sg, { seg: true, term: 'bud', name: `m${side}${k}`, xIn, xOut, yBot, yTop: yTop + 9, NWs: nws.slice(0, 3), dBots: [0, 8, 16], dTops: [0, 8] }); }   // rung 1: the top ends in a bud, not a spiral (a spiral needs about 14 stitches of room)
       if (L) { E.marginRoses(L); marginLeaves(L); L.piece = [top, bot]; segs[side].push(L); }
     });
   }
