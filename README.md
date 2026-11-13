@@ -27,9 +27,9 @@ Works on sites with **empty side margins of about 24 px or more** (it shrinks th
 
 ## Status (measured 13 Nov 2026, honest)
 
-- Test set: 116 recorded layouts (18 public pages, 4 pages from the author's portfolio, a demo page; each at 700, 910, 1024, 1440 and 1920 px). Vines grew and passed every geometry check on **110**. The other 6 get a plain message and nothing is drawn. Failures: a magazine article at 700 and 910 px, a technical blog at 700 to 1024 px, a documentation home page at 910 px (free strip only 5 to 8 stitches wide beside text).
+- Test set: 116 recorded layouts (18 public pages; 8 more were approved but could not be loaded from the cloud session used to build this, so they are not in the set; 4 pages from the author's portfolio, a demo page; each at 700, 910, 1024, 1440 and 1920 px). Vines grew and passed every geometry check on **110**. The other 6 get a plain message and nothing is drawn. Failures: a magazine article at 700 and 910 px, a technical blog at 700 to 1024 px, a documentation home page at 910 px (free strip only 5 to 8 stitches wide beside text).
 - 5 live public pages that were not in the test set: vines grew on 9 of 10 loads (5 pages at 910 and 1440 px); the tenth said the page does not fit.
-- Speed: planning takes about 1.5 s on a typical layout in Node and up to about 6 s on the longest (median 1.5 s, 90th percentile 3.5 s). In a browser the example pages plan in under 1 s even with the CPU slowed 4 times. Margin vines appear first; branches stop after a 3 s budget. A long page on a slow phone can take longer: it gives up after 15 s and says so. The page is never blocked.
+- Speed: planning takes about 1.5 s on a typical layout in Node and up to about 6 s on the longest (median 1.5 s, 90th percentile 3.5 s). In a browser the two example pages plan in under 0.5 s even with the CPU slowed 4 times; the 5 live pages took 0.1 to 0.8 s at normal speed (not measured slowed). Margin vines appear first; branches stop after a 3 s budget. A long page on a slow phone can take longer: it gives up after 15 s and says so. The page is never blocked.
 - Layout shift: none caused (CLS under 0.001 on the examples, nothing moves); scrolling stays at 60 fps in the example runs; the cache for a page is about 60 to 90 KB.
 - The cross stitch look here uses green and blue threads, not white on dots. The author's own site look (white thread over a faint shadow) is not matched; use `colors` to set thread colours.
 - Not done: scroll-growing vines, fruit, a server.
@@ -49,7 +49,7 @@ Works on sites with **empty side margins of about 24 px or more** (it shrinks th
 
 ## For developers
 
-Needs Node 18+. Playwright is used only by the tools.
+Needs Node 18+. Playwright is used only by the tools (a fresh clone needs `npx playwright install chromium` once before the browser tools work; `npm test` itself needs no browser).
 
     npm install
     npm test                      # builds, runs the 5 original layout checks, then scores all recorded layouts
