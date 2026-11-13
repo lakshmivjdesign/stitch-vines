@@ -1,7 +1,7 @@
 // Drawing styles for the demo. Each one takes the same vines (polylines in stitch units) and draws them into an SVG.
 //   StitchStyles[name](svg, ctx, res)  ->  a count for the status line
-// Honest labels: cross stitch and charcoal are looks given to the vines as they are. Kolam, zentangle and quilling are
-// "inspired by" renderings of the same vine shapes; a real kolam (a dot grid and looping lines) or a real zentangle would need its own generator.
+// Honest labels: cross stitch and charcoal are looks given to the vines as they are. Zentangle and quilling are
+// "inspired by" renderings of the same vine shapes; a real zentangle (pattern fills) would need its own generator.
 (function () {
   const NS = 'http://www.w3.org/2000/svg';
   const el = (name, attrs, parent) => { const e = document.createElementNS(NS, name); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
@@ -42,22 +42,6 @@
     path(g, res.parts.leaf.map(p => F.d(p, 2)).join(''), { 'stroke-width': u * .5, opacity: .8 });
     path(g, res.parts.flower.map(p => F.d(p, 2)).join(''), { 'stroke-width': u * .62, opacity: .92 });
     return res.limbs + ' limbs';
-  }
-
-  /* ---- kolam (inspired): a field of dots, the vines as smooth looping lines between them, in a warm red ---- */
-  function kolam(svg, ctx, res) {
-    const F = frame(ctx), u = ctx.u, red = '#8a2f22', df = defs(svg);
-    df.innerHTML = '<filter id="sv-flour" x="-2%" y="-2%" width="104%" height="104%"><feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="2" seed="2" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="1.6" xChannelSelector="R" yChannelSelector="G"/></filter>';
-    const all = res.parts.stem.concat(res.parts.leaf, res.parts.flower), near = cellsOf(all), dots = new Map(), STEP = 3, R = 6;
-    near.forEach(([c, r]) => { for (let i = Math.floor((c - R - 1.5) / STEP); i <= Math.ceil((c + R - 1.5) / STEP); i++) for (let j = Math.floor((r - R - 1.5) / STEP); j <= Math.ceil((r + R - 1.5) / STEP); j++) {
-      const x = STEP * i + 1.5, y = STEP * j + 1.5; if (Math.hypot(x - c, y - r) <= R - 1) dots.set(i * 8192 + j, [x, y]); } });             // pulli: dots on a lattice between the stitch cells
-    let dd = ''; dots.forEach(([x, y]) => { dd += 'M' + F.X(x) + ' ' + F.Y(y) + 'h.01'; });
-    path(group(svg, { stroke: red, 'stroke-width': u * .55, opacity: .75 }), dd);
-    const g = group(svg, { stroke: red, filter: 'url(#sv-flour)', opacity: .9 });
-    path(g, res.parts.stem.map(p => F.d(p, 2)).join(''), { 'stroke-width': u * .62 });
-    path(g, res.parts.leaf.map(p => F.d(p, 2)).join(''), { 'stroke-width': u * .5 });
-    path(g, res.parts.flower.map(p => F.d(p, 2)).join(''), { 'stroke-width': u * .5 });
-    return dots.size + ' dots';
   }
 
   /* ---- zentangle (inspired): black pen; stems get an echo line and beads, leaves are hatched or dotted, buds filled ---- */
@@ -102,6 +86,8 @@
     return res.limbs + ' limbs';
   }
 
-  window.StitchStyles = { cross, charcoal, kolam, zentangle, quilling };
-  window.StitchStyleNames = { cross: 'Cross stitch', charcoal: 'Charcoal', kolam: 'Kolam (inspired)', zentangle: 'Zentangle (inspired)', quilling: 'Quilling (inspired)' };
+  window.StitchStyles = { cross, charcoal, zentangle, quilling };
+  window.StitchStyleNames = { cross: 'Cross stitch', charcoal: 'Charcoal', zentangle: 'Zentangle (inspired)', quilling: 'Quilling (inspired)' };
+  // the main colours each style draws with, so a page can check them against its text colour (WCAG contrast)
+  window.StitchStyleColours = { cross: ['#1e6432', '#28963f', '#1e5ac8'], charcoal: ['#2a2724'], zentangle: ['#1b1b1b'], quilling: ['#2f7d4f', '#4fae6a', '#d9556c', '#e3a63c'] };
 })();

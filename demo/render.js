@@ -3,6 +3,7 @@
 // inside the body, so it changes neither the layout nor what can be read or clicked.
 (function () {
   const params = new URLSearchParams(location.search), status = document.getElementById('stitch-vines-status'), picker = document.getElementById('stitch-style'), NS = 'http://www.w3.org/2000/svg';
+  const overText = params.has('overText');                              // ?overText lets vines pass under words, to compare (and to show the contrast warning)
   let worker = null, token = 0, lastW = 0, last = null, style = StitchStyles[params.get('style')] ? params.get('style') : 'cross';
   if (picker) picker.value = style;
 
@@ -27,7 +28,10 @@
   function report(ctx, res) {
     if (!res.limbs) { say(`No vines at ${ctx.W} px: the margin is too narrow for them.`); return; }
     const d = draw(ctx, res);
-    say(`${StitchStyleNames[style]}: vines grown in ${(res.ms / 1000).toFixed(1)} s at ${ctx.W} px (${d.n}), drawn in ${d.drawMs} ms.`);
+    let warn = '';
+    if (overText && ctx.textColours.length) { const t = ctx.textColours[0], need = t.large ? 3 : 4.5, bad = StitchStyleColours[style].map(v => [v, StitchVinesAdapter.contrast(v, t.colour)]).filter(x => x[1] < need);
+      if (bad.length) warn = ` Warning: vines pass under text here, and ${bad.map(x => x[0] + ' is only ' + x[1] + ':1').join(', ')} against the text colour (WCAG asks ${need}:1).`; }
+    say(`${StitchStyleNames[style]}: vines grown in ${(res.ms / 1000).toFixed(1)} s at ${ctx.W} px (${d.n}), drawn in ${d.drawMs} ms.${warn}`);
   }
 
   function grow(plain) {                                                  // in a worker when the page is served over http; on the main thread otherwise
@@ -42,7 +46,7 @@
   async function run() {
     const mine = ++token;
     await StitchVinesAdapter.ready();
-    const ctx = StitchVinesAdapter.measure(), W = ctx.W; lastW = W;
+    const ctx = StitchVinesAdapter.measure({ textClear: !overText }), W = ctx.W; lastW = W;
     window.stitchVinesLast = { ctx };                                      // for looking at it from the console
     if (!ctx.ok) { say('No vines: ' + ctx.notes.join('; ')); if (!W) lastW = -1; return; }   // a hidden pane has no width: the next resize tries again
     say('Growing vines… (the page is already usable; this takes a few seconds)');

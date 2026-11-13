@@ -6,11 +6,12 @@
        u    stitch size in css px          m    side margin in css px           W   page width in css px
        top  css y above which nothing may grow           foot  css y of the footer's top
        heads  one box per section heading (css px)       rows  one box per section's row of cards/images, same order as heads
-       cell(c, r) -> 0 free | 1 text (a vine may pass under words) | 2 object (card, image, button: a vine may pass under its middle only)
+       cell(c, r) -> 0 free | 1 text (a vine may pass under words, unless ctx.textClear is set: then it may not) | 2 object (card, image, button: a vine may pass under its middle only)
    Output: an array of polylines [[x, y], ...] in stitch units (a cell's centre is an integer), with .limbs describing every limb for tests/check.js.
    Status: first public cut, taken from one site's working copy; see docs/roadmap.md. */
 window.StitchVines = function (ctx) {
   const { u, m, W, foot, heads, cell } = ctx;
+  const textClear = !!ctx.textClear;                                                                          // opt-in: text is not passable, vines stay out of it (docs/rules.md, rule 12b)
   const PHI = 1.618034, D = Math.PI / 180, TAU = Math.PI * 2, MINR = 6.6, DS = .3;
   const cs = -Math.ceil(m / u), ce = Math.ceil((W - m) / u), NC = ce - cs, C = Math.round((W - 2 * m) / u);      // stitch columns that exist: cs .. ce-1; the content runs 0 .. C-1
   const rowMin = Math.ceil(ctx.top / u) + 1, rowFoot = Math.ceil(foot / u), NR = rowFoot + 14;                   // nothing above rowMin; the page ends a little below the footer line
@@ -61,9 +62,10 @@ window.StitchVines = function (ctx) {
   /* ---- occupancy: every element (a stem, a leaf, a rose, a bud) owns its stitches and the stitches inside it; nothing else may come within one stitch ---- */
   const cellsOf = polys => { const seen = new Map(); polys.forEach(pl => { for (let i = 0; i < pl.length - 1; i++) { const a = pl[i], b = pl[i + 1], k = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / .35)); for (let j = 0; j <= k; j++) { const c = Math.round(a[0] + (b[0] - a[0]) * j / k), r = Math.round(a[1] + (b[1] - a[1]) * j / k); seen.set(key(c, r), [c, r]); } } }); return [...seen.values()]; };
   const badCell = (c, r, host, at, jr) => { if (c < cs || c >= ce || r < rowMin || r >= NR) return true;
+    if (textClear && mask[r * NC + c - cs] === 1) return true;
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const k = ix(c + dx, r + dy), id = own[k], id2 = own2[k]; if (!id) continue;
       if (!(id === host && Math.hypot(c - at[0], r - at[1]) <= jr - 1.5)) return true; if (id2 && !(id2 === host && Math.hypot(c - at[0], r - at[1]) <= jr - 1.5)) return true; } return false; };
-  const blocked = (cells, fill, host, at, jr) => { for (const [c, r] of cells) if (badCell(c, r, host, at, jr)) return true; for (const [c, r] of fill) if (c < cs || c >= ce || r < rowMin || r >= NR || own[ix(c, r)]) return true; return false; };
+  const blocked = (cells, fill, host, at, jr) => { for (const [c, r] of cells) if (badCell(c, r, host, at, jr)) return true; for (const [c, r] of fill) if (c < cs || c >= ce || r < rowMin || r >= NR || own[ix(c, r)] || (textClear && mask[r * NC + c - cs] === 1)) return true; return false; };
   const claim = (id, cells, fill) => { cells.forEach(([c, r]) => { const k = ix(c, r); if (!own[k]) own[k] = id; else if (own[k] !== id && !own2[k]) own2[k] = id; }); fill.forEach(([c, r]) => { const k = ix(c, r); if (!own[k]) own[k] = id; }); els[id].mine = cells.concat(fill); };
   const release = id => { els[id].mine.forEach(([c, r]) => { const k = ix(c, r); if (own[k] === id) { own[k] = own2[k]; own2[k] = 0; } else if (own2[k] === id) own2[k] = 0; }); els[id].mine = []; };
   const newEl = (limb, kind, at, jr) => { els.push({ limb, kind, at, jr, mine: [] }); return els.length - 1; };

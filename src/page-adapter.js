@@ -23,6 +23,8 @@
     rules: [{ selector: 'header', edge: 'bottom' }, { selector: 'footer', edge: 'top' }],   // lines a vine keeps clear of, drawn across the content width
     text: null,             // selector limiting where text counts (null: all text in `scope`)
     ignore: '[data-stitch-ignore]',   // never measured (the vine overlay itself, status notes)
+    textClear: true,        // vines keep out of text (the generator is told through ctx.textClear). false: they may pass under words; then check the contrast, see `contrast`
+    vineColours: null,      // CSS colours the vines will be drawn in: with textClear false they are checked against the text colours (WCAG 1.4.3) and ctx.notes says which fail
     textPad: 1,             // stitches around each line of text
     objectPad: 1.5          // stitches around each object
   };
@@ -75,20 +77,29 @@
     const E = 1e-6, mark = (b, pad, kind) => { const p = pad * u, x0 = b.left - p, x1 = b.right + p, y0 = b.top - p, y1 = b.bottom + p;
       const c0 = Math.max(cStart, Math.floor((x0 - m) / u + E)), c1 = Math.min(cEnd - 1, Math.ceil((x1 - m) / u - E) - 1), r0 = Math.max(0, Math.floor(y0 / u + E)), r1 = Math.min(NR - 1, Math.ceil(y1 / u - E) - 1);
       for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) { const k = r * NC + c - cStart; if (mask[k] < kind) mask[k] = kind; } };
-    const scopes = o.text ? all(o.text, scope) : [scope], seen = new Set(), vis = new Map();
+    const scopes = o.text ? all(o.text, scope) : [scope], seen = new Set(), vis = new Map(), colours = new Map();
     scopes.forEach(s => { const tw = doc.createTreeWalker(s, 4); for (let n = tw.nextNode(); n; n = tw.nextNode()) { if (seen.has(n) || !n.nodeValue.trim()) continue; seen.add(n); const p = n.parentElement; if (!p) continue;
       if (!vis.has(p)) vis.set(p, !ignored(p) && !/^(SCRIPT|STYLE|NOSCRIPT|TEMPLATE)$/.test(p.tagName) && visible(p)); if (!vis.get(p)) continue;
+      { const cs = root.getComputedStyle(p), px = parseFloat(cs.fontSize), large = px >= 24 || (px >= 18.66 && +cs.fontWeight >= 700), k = cs.color + '|' + large; const e = colours.get(k) || { colour: cs.color, large, count: 0 }; e.count++; colours.set(k, e); }
       const rg = doc.createRange(); rg.selectNodeContents(n); for (const r of rg.getClientRects()) if (r.width >= 2 && r.height >= 2) mark(boxOf(r), o.textPad, 1); } });
     all(o.objects, scope).forEach(el => { const r = el.getBoundingClientRect(); if (r.width > 0 && r.height > 0) mark(boxOf(r), o.objectPad, 2); });
     (o.rules || []).forEach(rule => all(rule.selector, scope).forEach(el => { const b = boxOf(el.getBoundingClientRect()), y = rule.edge === 'top' ? b.top : b.bottom; mark({ left: Math.max(b.left, m), right: Math.min(b.right, W - m), top: y, bottom: y }, o.objectPad, 2); }));
 
     const cell = (c, r) => (c < cStart || c >= cEnd || r < 0 || r >= NR) ? 0 : mask[r * NC + c - cStart];
     const grid = []; for (let r = 0; r < NR; r++) { let s = ''; for (let c = cStart; c < cEnd; c++) s += mask[r * NC + c - cStart]; grid.push(s); }
-    return { ok: heads.length > 0, u, m, W, top, foot, heads, rows, cell, C, R, c0: cStart, cStart, cEnd, grid, notes };
+    const textColours = [...colours.values()].sort((a, b) => b.count - a.count);
+    if (!o.textClear && o.vineColours) textColours.slice(0, 3).forEach(t => o.vineColours.forEach(v => { const ratio = contrast(v, t.colour), need = t.large ? 3 : 4.5;
+      if (ratio < need) notes.push('vine colour ' + v + ' on text colour ' + t.colour + ' has contrast ' + ratio + ':1, below the ' + need + ':1 that WCAG 1.4.3 asks for ' + (t.large ? 'large' : 'normal') + ' text; with textClear false it breaks legibility where they overlap'); }));
+    return { ok: heads.length > 0, u, m, W, top, foot, heads, rows, cell, C, R, c0: cStart, cStart, cEnd, grid, notes, textClear: !!o.textClear, textColours };
   }
 
+  // WCAG contrast ratio of two CSS colours (opaque; any colour the browser understands)
+  function rgbOf(css) { const cv = root.document.createElement('canvas'); cv.width = cv.height = 1; const g = cv.getContext('2d'); g.fillStyle = css; g.fillRect(0, 0, 1, 1); return [...g.getImageData(0, 0, 1, 1).data]; }
+  function contrast(a, b) { const L = css => { const [r, g, bl] = rgbOf(css).map(v => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }); return .2126 * r + .7152 * g + .0722 * bl; };
+    const la = L(a), lb = L(b); return Math.round((Math.max(la, lb) + .05) / (Math.min(la, lb) + .05) * 100) / 100; }
+
   // the plain data version of a ctx (what tests/fixtures/layout-*.json hold: `cell` replaced by `grid`)
-  function snapshot(ctx) { const o = {}; ['u', 'm', 'W', 'top', 'foot', 'heads', 'rows', 'C', 'R', 'c0', 'grid'].forEach(k => { o[k] = ctx[k]; }); return o; }
+  function snapshot(ctx) { const o = {}; ['u', 'm', 'W', 'top', 'foot', 'heads', 'rows', 'C', 'R', 'c0', 'grid', 'textClear'].forEach(k => { o[k] = ctx[k]; }); return o; }
 
   // resolves when fonts and images have loaded, so the measured positions are the final ones
   async function ready() {
@@ -98,5 +109,5 @@
     await Promise.all([...doc.images].map(im => im.complete ? null : new Promise(res => { im.addEventListener('load', res, { once: true }); im.addEventListener('error', res, { once: true }); })));
   }
 
-  root.StitchVinesAdapter = { measure, snapshot, ready, defaults };
+  root.StitchVinesAdapter = { measure, snapshot, ready, contrast, defaults };
 })(typeof window !== 'undefined' ? window : globalThis);
