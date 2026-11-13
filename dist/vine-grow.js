@@ -88,7 +88,7 @@ window.StitchVinesEngine = function (ctx) {
   function marginVine(sg, o = {}) {                                                             // sg +1: the left margin (curls to the right at the top), -1: the right margin
     const xIn = o.xIn ?? (sg > 0 ? edgeL - 1.9 : edgeR + 1.9), xOut = o.xOut ?? (sg > 0 ? cs + 1 : ce - 2), yBot = o.yBot ?? rowFoot, yTop = o.yTop ?? rowMin, nm = o.name || (sg > 0 ? 'margin-L' : 'margin-R'); if (Math.abs(xIn - xOut) < .8) { stats.fail.push('margin ' + sg + ' too narrow ' + xIn + ' ' + xOut); return null; }     // no room for a margin vine (narrow screens): none is grown
     const bud = o.term === 'bud', xc = (xIn + xOut) / 2, A = Math.max(.5, Math.min(3.2, Math.abs(xIn - xOut) / 2)), Lr = 12, La = 15;
-    for (const dBot of [0, 6, 12, 20]) for (const NW of (o.NWs || [17, 23, 31, 41])) for (const r0 of [9.5, 8.5, 7.5, 6.8]) for (const dTop of [0, 3, 6, 10, 15]) for (const [hs, rh] of [[1, 6.2]]) {
+    for (const dBot of (o.dBots || [0, 6, 12, 20])) for (const NW of (o.NWs || [17, 23, 31, 41])) for (const r0 of (o.r0s || [9.5, 8.5, 7.5, 6.8])) for (const dTop of (o.dTops || [0, 3, 6, 10, 15])) for (const [hs, rh] of [[1, 6.2]]) {
       const k1 = 1 / r0, dR = Lr / (2 * rh), th0 = -Math.PI / 2 - hs * sg * dR, yStart = yBot + 3 - dBot;                              // the vine runs down beside the footer rule and ends in a bud, so the space above the footer has a long stem to branch from
       const make = lam => { const om = TAU / lam, kw = A * om * om, wEnd = NW * lam / 2, k0 = sg * kw;                      // the heading wobbles around straight up; the wave ends upright and bending inward
         const kf = s => { if (s < Lr) { const q = Math.cos(Math.PI * s / (2 * Lr)); return hs * sg / rh * q * q; } const w = s - Lr; if (w < wEnd) return -sg * kw * Math.cos(om * w);
@@ -99,7 +99,7 @@ window.StitchVinesEngine = function (ctx) {
         const apex = Math.min(...g.P.map(p => p[1]), ...tl.map(p => p[1])), want = yStart - (yTop + 2.5 + dTop), ext = yStart - apex; fit = { mk, g }; if (Math.abs(ext - want) < .25) break; lam *= want / ext; }
       if (A * Math.pow(TAU / lam, 2) < .042) continue;                                       // a margin strip that narrow needs a shorter wave, or the bends are too faint to read as curves
       if (lam < 22 || lam > 90) { stats.fail.push('margin ' + sg + ' lam ' + lam.toFixed(1)); continue; }
-      const wv = fit.g.P.slice(Math.round(Lr / DS), Math.round((Lr + fit.mk.wEnd) / DS)), x0 = xc - (Math.min(...wv.map(p => p[0])) + Math.max(...wv.map(p => p[0]))) / 2;
+      const wv = fit.g.P.slice(Math.round(Lr / DS), Math.round((Lr + fit.mk.wEnd) / DS)); let x0 = xc - (Math.min(...wv.map(p => p[0])) + Math.max(...wv.map(p => p[0]))) / 2;
       const g = grow(x0, yStart, th0, fit.mk.kf, fit.mk.total, 0, [0, 0], 0); if (g.stop >= 0) { stats.fail.push('margin ' + sg + ' stem stopped at ' + g.P[g.stop].map(v => v.toFixed(1))); continue; }
       const L = { id: ++limbSeq, name: nm, kind: 'margin', side: sg > 0 ? 'L' : 'R', sg, band: -1, parent: null, term: 'spiral', P: g.P, TH: g.TH, S: g.S, K: g.K, stem: g.P, organs: [], head: [], tail: [], children: [] };
       L.sid = newEl(L, 'stem', [x0, yStart], 8); claim(L.sid, cellsOf([g.P]), []);
@@ -247,8 +247,8 @@ window.StitchVinesGeneral = function (ctx, opt) {
       const yBot = bot - 11, yTop = top + 1, H = yBot - yTop - 30;                      // 11 rows below the start for the base bud; 30 for the first lobe and the top arch
       const nws = H > 20 ? oddNW(H, lamMax) : [];
       if (!nws.length) { stats.fail.push(`margin ${side} piece ${top}-${bot}: height ${H} fits no wave`); return; }
-      let L = marginVine(sg, { seg: true, name: `m${side}${k}`, xIn, xOut, yBot, yTop, NWs: nws });
-      if (!L) { status.rung = Math.max(status.rung, 1); L = marginVine(sg, { seg: true, term: 'bud', name: `m${side}${k}`, xIn, xOut, yBot, yTop: yTop - 12, NWs: nws }); }   // rung 1: the top ends in a bud, not a spiral (a spiral needs about 14 stitches of room)
+      let L = marginVine(sg, { seg: true, name: `m${side}${k}`, xIn, xOut, yBot, yTop, NWs: nws.slice(0, 3), dBots: [0, 8, 16], r0s: [9.5, 8, 6.8], dTops: [0, 8] });
+      if (!L) { status.rung = Math.max(status.rung, 1); L = marginVine(sg, { seg: true, term: 'bud', name: `m${side}${k}`, xIn, xOut, yBot, yTop: yTop - 12, NWs: nws.slice(0, 3), dBots: [0, 8, 16], dTops: [0, 8] }); }   // rung 1: the top ends in a bud, not a spiral (a spiral needs about 14 stitches of room)
       if (L) { marginLeaves(L); L.piece = [top, bot]; segs[side].push(L); }
     });
   }
@@ -350,7 +350,7 @@ window.StitchVinesFit = function (ctx0, opt) {
     const v = order[k], out = window.StitchVinesPlan(v.c, opt); out.u = v.c.u; tried.push(`${v.c.u.toFixed(1)} px stitch: ${(out.limbs || []).length} limbs`);
     if (!best || (out.limbs || []).length > (best.limbs || []).length) best = out;
     if (real(out)) { best = out; break; } }
-  if (!real(best)) { best.status = Object.assign({}, best.status, { ok: false, message: 'No vines were drawn: ' + ((window.__stitchVines && window.__stitchVines.fail || [])[0] || 'no free strip long enough in the margins') + ' (tried ' + tried.join('; ') + ')' }); }
+  if (!real(best)) { const none = []; none.limbs = []; none.u = best.u; best = none; best.status = Object.assign({}, best.status, { ok: false, message: 'No vines were drawn. This page has a free strip beside the content, but not one that is wide and tall enough for a vine on BOTH sides (a lone vine looks wrong, so none is drawn). Tried: ' + tried.join('; ') + '.' }); }
   else best.status = Object.assign({}, best.status, { ok: true, u: best.u, message: 'Grew ' + best.limbs.length + ' vines (' + best.u.toFixed(1) + ' px stitch' + (best.u < list[0].u - .3 ? ', smaller stitch for narrow margins' : '') + ').' });
   return best;
 };

@@ -18,7 +18,7 @@ window.StitchVinesFit = function (ctx0, opt) {
     const v = order[k], out = window.StitchVinesPlan(v.c, opt); out.u = v.c.u; tried.push(`${v.c.u.toFixed(1)} px stitch: ${(out.limbs || []).length} limbs`);
     if (!best || (out.limbs || []).length > (best.limbs || []).length) best = out;
     if (real(out)) { best = out; break; } }
-  if (!real(best)) { best.status = Object.assign({}, best.status, { ok: false, message: 'No vines were drawn: ' + ((window.__stitchVines && window.__stitchVines.fail || [])[0] || 'no free strip long enough in the margins') + ' (tried ' + tried.join('; ') + ')' }); }
+  if (!real(best)) { const none = []; none.limbs = []; none.u = best.u; best = none; best.status = Object.assign({}, best.status, { ok: false, message: 'No vines were drawn. This page has a free strip beside the content, but not one that is wide and tall enough for a vine on BOTH sides (a lone vine looks wrong, so none is drawn). Tried: ' + tried.join('; ') + '.' }); }
   else best.status = Object.assign({}, best.status, { ok: true, u: best.u, message: 'Grew ' + best.limbs.length + ' vines (' + best.u.toFixed(1) + ' px stitch' + (best.u < list[0].u - .3 ? ', smaller stitch for narrow margins' : '') + ').' });
   return best;
 };

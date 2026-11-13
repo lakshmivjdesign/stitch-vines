@@ -33,8 +33,8 @@ window.StitchVinesGeneral = function (ctx, opt) {
       const yBot = bot - 11, yTop = top + 1, H = yBot - yTop - 30;                      // 11 rows below the start for the base bud; 30 for the first lobe and the top arch
       const nws = H > 20 ? oddNW(H, lamMax) : [];
       if (!nws.length) { stats.fail.push(`margin ${side} piece ${top}-${bot}: height ${H} fits no wave`); return; }
-      let L = marginVine(sg, { seg: true, name: `m${side}${k}`, xIn, xOut, yBot, yTop, NWs: nws });
-      if (!L) { status.rung = Math.max(status.rung, 1); L = marginVine(sg, { seg: true, term: 'bud', name: `m${side}${k}`, xIn, xOut, yBot, yTop: yTop - 12, NWs: nws }); }   // rung 1: the top ends in a bud, not a spiral (a spiral needs about 14 stitches of room)
+      let L = marginVine(sg, { seg: true, name: `m${side}${k}`, xIn, xOut, yBot, yTop, NWs: nws.slice(0, 3), dBots: [0, 8, 16], r0s: [9.5, 8, 6.8], dTops: [0, 8] });
+      if (!L) { status.rung = Math.max(status.rung, 1); L = marginVine(sg, { seg: true, term: 'bud', name: `m${side}${k}`, xIn, xOut, yBot, yTop: yTop - 12, NWs: nws.slice(0, 3), dBots: [0, 8, 16], dTops: [0, 8] }); }   // rung 1: the top ends in a bud, not a spiral (a spiral needs about 14 stitches of room)
       if (L) { marginLeaves(L); L.piece = [top, bot]; segs[side].push(L); }
     });
   }
