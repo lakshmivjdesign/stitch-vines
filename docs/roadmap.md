@@ -6,7 +6,7 @@ In order of what unlocks the most.
 2. **A renderer. A first version exists.** `demo/render.js` draws cross stitches in one SVG behind the content, grown in a worker. It is a demo, not a library: no caching per width, one colour per kind, no animation.
 3. **Speed.** About 1 to 3 seconds per layout on the demo (was 2 to 5 on the first recorded layouts). Ideas: a smaller, smarter search; precompute per width and cache.
 4. **Layouts that are not "headings with a row of cards".** Today the plan assumes sections made of a heading and a row. Plans for single-column articles, a hero with buttons, and card grids are separate small plan files on one shared engine.
-5. **Split the engine from the plan.** `src/vine-grow.js` mixes the engine (curvature growth, organs, collision, search) with one plan (where branches go). They should be two files.
+5. **Split the engine from the plan. Done (P0).** `src/engine.js` (growth, organs, collision, margin vines, branch search) and `src/planner.js` (where limbs go); `npm run build` joins them into `dist/vine-grow.js`. Output checked byte-identical to the old single file on 7 layouts.
 6. **Open gaps.** Branches beside carousel arrows that sit against the margin often do not fit under the tangent-and-lean rules. Leaves come out a little small. The density method for large pages is not settled. At 700 and 910 px the demo gets no branches in the space above the footer, and at wider widths one a side, not two or three.
 7. **An instruction file for assistants** (`skill/SKILL.md`): a draft exists; update it as the adapter is proven on real pages.
 8. **Found while building the adapter (not fixed, outside its brief).**

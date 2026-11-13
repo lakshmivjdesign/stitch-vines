@@ -3,7 +3,7 @@
 const fs = require('fs'), path = require('path');
 const { loadCtx, run } = require('../tests/harness.js');
 const W = +process.argv[2] || 910, out = process.argv[3] || 'example.svg', Z = 4;
-const ctx = loadCtx(W), res = run(path.join(__dirname, '..', 'src', 'vine-grow.js'), ctx);
+const ctx = loadCtx(W), res = run(path.join(__dirname, '..', 'dist', 'vine-grow.js'), ctx);
 const cs = ctx.cStart, ce = ctx.cEnd, r1 = Math.ceil(ctx.foot / ctx.u) + 14, r0 = Math.max(0, Math.floor(ctx.top / ctx.u) - 3), svg = [];
 svg.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${(ce - cs) * Z}" height="${(r1 - r0) * Z}" viewBox="0 0 ${(ce - cs) * Z} ${(r1 - r0) * Z}"><rect width="100%" height="100%" fill="#eee8da"/>`);
 for (let r = r0; r < r1; r++) { let c = cs; while (c < ce) { const k = ctx.cell(c, r); if (!k) { c++; continue; } let e = c; while (e < ce && ctx.cell(e, r) === k) e++; svg.push(`<rect x="${(c - cs) * Z}" y="${(r - r0) * Z}" width="${(e - c) * Z}" height="${Z}" fill="${k === 2 ? '#cdc8bc' : '#e2dccf'}"/>`); c = e; } }

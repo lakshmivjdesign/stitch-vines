@@ -1,15 +1,6 @@
-/* stitch-vines: grows a plant-like vine background (margin vines, branches, leaves, roses, buds, golden-ratio spirals) in the empty space of a web page.
-   It does not draw anything itself: it returns polylines in "stitch" units (one unit = one cell of a dot lattice). Render them as cross stitches, SVG, canvas, anything.
-   Every limb is ONE continuous stroke, grown step by step from its curvature, so there are no kinks and nothing is cut afterwards (rules: docs/rules.md).
-   Input (the layout contract, docs/layout-contract.md):
-     ctx = { u, m, W, top, foot, heads:[{top,bottom,left,right}], rows:[{top,bottom}], cell(c, r) }
-       u    stitch size in css px          m    side margin in css px           W   page width in css px
-       top  css y above which nothing may grow           foot  css y of the footer's top
-       heads  one box per section heading (css px)       rows  one box per section's row of cards/images, same order as heads
-       cell(c, r) -> 0 free | 1 text (a vine may pass under words, unless ctx.textClear is set: then it may not) | 2 object (card, image, button: a vine may pass under its middle only)
-   Output: an array of polylines [[x, y], ...] in stitch units (a cell's centre is an integer), with .limbs describing every limb for tests/check.js.
-   Status: first public cut, taken from one site's working copy; see docs/roadmap.md. */
-window.StitchVines = function (ctx) {
+/* stitch-vines ENGINE: curvature growth, organs (leaf, rose, bud), collision, margin vines, branch search. It does not decide WHERE branches go: that is the planner (src/planner.js).
+   StitchVinesEngine(ctx) returns the tools the planner uses. Layout contract: docs/layout-contract.md. Rules: docs/rules.md. */
+window.StitchVinesEngine = function (ctx) {
   const { u, m, W, foot, heads, cell } = ctx;
   const textClear = !!ctx.textClear;                                                                          // opt-in: text is not passable, vines stay out of it (docs/rules.md, rule 12b)
   const PHI = 1.618034, D = Math.PI / 180, TAU = Math.PI * 2, MINR = 6.6, DS = .3;
@@ -32,9 +23,6 @@ window.StitchVines = function (ctx) {
 
   /* ---- the sections: a heading, its intro, then the card row; the vines work around the heading ---- */
   const cardRows = (ctx.rows || []).map(r => [Math.floor(r.top / u), Math.ceil(r.bottom / u)]);
-  const bands = heads.map((h, i) => { const hA = Math.floor(h.top / u), hB = Math.ceil(h.bottom / u), rT = cardRows[i] ? cardRows[i][0] : hB + 20, prev = i ? cardRows[i - 1][1] : rowMin;
-    return { i, ra: prev + 1, rb: rT - 1, hA, hB, hc: (hA + hB) / 2, lastC: Math.round((h.right - m) / u), rT }; });
-  { const last = cardRows[cardRows.length - 1][1]; bands.push({ i: bands.length, ra: last + 1, rb: rowFoot - 1, hA: last + 1, hB: last + 1, hc: last + 1, lastC: 0, rT: rowFoot, tail: true }); }                                  // the big space under the last cards, above the footer
   const edgeL = (() => { let e = 0; for (let r = cardRows[0][0] + 2; r < cardRows[0][1] - 2; r += 4) for (let c = cs; c < 10; c++) if (kindAt(c, r) === 2) { e = Math.min(e, c); break; } return e; })();      // the first stitch column a card covers, on the left
   const edgeR = (() => { let e = C; for (let r = cardRows[0][0] + 2; r < cardRows[0][1] - 2; r += 4) for (let c = ce - 1; c > C - 10; c--) if (kindAt(c, r) === 2) { e = Math.max(e, c); break; } return e; })();   // and on the right
 
@@ -214,8 +202,30 @@ window.StitchVines = function (ctx) {
       if (n < Math.min(want, 3)) { while (L.organs.length > k0) release(L.organs.pop().eid); n = leafRun(L, spec, spec.leafFrom ?? 9, total - 4, spec.leaf ?? 12, -sd); } }       // if the leaves cannot start on one side, start on the other
     return L.organs.length + (spec.term === 'spiral' ? 1 : 0) >= (spec.minEl ?? 3); }
 
-  /* ---- the composition: which limbs, from the rules (2 to 3 branches per band side), measured against each band's own rows and heading; shoots are free ---- */
   function mirror(side, x) { return side === 'L' ? x : (C - 1) - x; }
+  return { ctx, u, m, W, foot, heads, cell, textClear, PHI, D, TAU, MINR, DS, cs, ce, NC, C, rowMin, rowFoot, NR, kindAt, hid, cardRows, limbs, margins, stats, rnd, rr, seedFor,
+    marginVine, placeLimb, mirror, tryOrgan, mkLeaf, mkRose, mkBud, edgeL, edgeR };
+};
+
+/* stitch-vines PLANNER + entry point (src/engine.js holds the growing tools): grows a plant-like vine background (margin vines, branches, leaves, roses, buds, golden-ratio spirals) in the empty space of a web page.
+   It does not draw anything itself: it returns polylines in "stitch" units (one unit = one cell of a dot lattice). Render them as cross stitches, SVG, canvas, anything.
+   Every limb is ONE continuous stroke, grown step by step from its curvature, so there are no kinks and nothing is cut afterwards (rules: docs/rules.md).
+   Input (the layout contract, docs/layout-contract.md):
+     ctx = { u, m, W, top, foot, heads:[{top,bottom,left,right}], rows:[{top,bottom}], cell(c, r) }
+       u    stitch size in css px          m    side margin in css px           W   page width in css px
+       top  css y above which nothing may grow           foot  css y of the footer's top
+       heads  one box per section heading (css px)       rows  one box per section's row of cards/images, same order as heads
+       cell(c, r) -> 0 free | 1 text (a vine may pass under words, unless ctx.textClear is set: then it may not) | 2 object (card, image, button: a vine may pass under its middle only)
+   Output: an array of polylines [[x, y], ...] in stitch units (a cell's centre is an integer), with .limbs describing every limb for tests/check.js.
+   Status: first public cut, taken from one site's working copy; see docs/roadmap.md. */
+window.StitchVines = function (ctx) {
+  const E = window.StitchVinesEngine(ctx);
+  const { u, m, W, foot, heads, cs, ce, C, rowMin, rowFoot, NR, kindAt, cardRows, limbs, margins, stats, rnd, rr, seedFor, marginVine, placeLimb, mirror, tryOrgan, mkLeaf, mkRose, mkBud, DS, MINR, D } = E;
+  /* ---- the sections: a heading, its intro, then the card row ---- */
+  const bands = heads.map((h, i) => { const hA = Math.floor(h.top / u), hB = Math.ceil(h.bottom / u), rT = cardRows[i] ? cardRows[i][0] : hB + 20, prev = i ? cardRows[i - 1][1] : rowMin;
+    return { i, ra: prev + 1, rb: rT - 1, hA, hB, hc: (hA + hB) / 2, lastC: Math.round((h.right - m) / u), rT }; });
+  { const last = cardRows[cardRows.length - 1][1]; bands.push({ i: bands.length, ra: last + 1, rb: rowFoot - 1, hA: last + 1, hB: last + 1, hc: last + 1, lastC: 0, rT: rowFoot, tail: true }); }                                  // the big space under the last cards, above the footer
+  /* ---- the composition: which limbs, from the rules (2 to 3 branches per band side), measured against each band's own rows and heading; shoots are free ---- */
   const clearOf2 = (c, r, rad) => { for (let dy = -rad; dy <= rad; dy++) for (let dx = -rad; dx <= rad; dx++) if (kindAt(c + dx, r + dy) === 2) return false; return true; };
   const freeNear = (c, r, rad = 5) => { for (let d = 0; d < 30; d++) for (let dy = -d; dy <= d; dy++) for (let dx = -d; dx <= d; dx++) { if (Math.max(Math.abs(dx), Math.abs(dy)) !== d) continue; const cc = Math.round(c + dx), rw = Math.round(r + dy); if (cc > cs + 3 && cc < ce - 3 && rw > rowMin + 4 && rw < NR - 6 && clearOf2(cc, rw, rad)) return [cc, rw]; } return [c, r]; };
   const slot = (b, side, o) => ({ search: 130, nl: [3, 5], ...o, alts: (o.alts || []).map(a => a.T ? { ...a, T: freeNear(mirror(side, a.T[0]), a.T[1], o.clear ?? 5) } : a), name: `b${b.i + 1}${side}-${o.kind}`, side, sgn: side === 'L' ? 1 : -1, band: b.i, T: freeNear(mirror(side, o.T[0]), o.T[1], o.clear ?? 5), wp: (o.wp || []).map(([x, y, t]) => [mirror(side, x), y, t]) });
@@ -246,3 +256,4 @@ window.StitchVines = function (ctx) {
   const out = []; limbs.forEach(L => { out.push(L.head.concat(L.stem, L.tail.slice(1))); L.organs.forEach(o => o.polys.forEach(p => out.push(p))); });
   out.limbs = limbs; stats.limbs = limbs.length; return out;
 };
+

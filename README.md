@@ -8,7 +8,7 @@ Made with Claude.
 
 ## What it is
 
-- `src/vine-grow.js`: the generator. Give it a description of the page (where the text, cards, buttons and headings are) and it returns polylines. It draws nothing itself: render the polylines as cross stitches, SVG, canvas or anything else.
+- `src/engine.js` + `src/planner.js` (joined by `npm run build` into `dist/vine-grow.js`): the generator. Give it a description of the page (where the text, cards, buttons and headings are) and it returns polylines. It draws nothing itself: render the polylines as cross stitches, SVG, canvas or anything else.
 - `src/page-adapter.js`: the page adapter. A browser script that measures a live page (text lines, cards, images, buttons, headings, header and footer lines) and builds the layout description the generator needs.
 - `demo/`: a small generic demo page. `demo/index.html` measures itself, grows the vines and draws them behind the content as cross stitches.
 - `tools/record-layout.js`: opens any URL at a width in a headless browser, runs the adapter and saves the layout as a recorded layout for the checker.
@@ -35,7 +35,7 @@ The page shows first; the vines are grown in a background worker (about 1 to 3 s
 
 The demo has a style switch (bottom right, or `?style=charcoal` in the address): cross stitch, charcoal, zentangle and quilling. Changing style redraws the same vines. Cross stitch and charcoal are looks given to the vines as they are. Zentangle and quilling are *inspired by* those arts, drawn on the same vine shapes; a real zentangle (pattern fills) would need its own generator. This is an experiment to decide a direction, not a finished feature.
 
-Use it on a page of your own: load `src/vine-grow.js` and `src/page-adapter.js`, then
+Use it on a page of your own: load `dist/vine-grow.js` and `src/page-adapter.js`, then
 
     const ctx = StitchVinesAdapter.measure({ headings: 'h2', cards: '.card' });
     const polylines = window.StitchVines(ctx);       // then draw them (see demo/render.js)
