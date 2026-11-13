@@ -4,7 +4,7 @@
    3. a status for the person: how many vines grew, which relaxation rung was needed, or why nothing grew.
    Rules are the same as everywhere (docs/rules.md); this file only decides WHERE. */
 window.StitchVinesGeneral = function (ctx, opt) {
-  opt = opt || {};
+  opt = opt || {}; const t0 = Date.now();
   const E = window.StitchVinesEngine(ctx);
   const { u, cs, ce, C, rowMin, rowFoot, NR, kindAt, stats, marginVine, placeLimb, marginLeaves, finish, limbs, textClear } = E;
   const status = { grew: 0, rung: 0, notes: [] }, say = s => status.notes.push(s);
@@ -41,6 +41,8 @@ window.StitchVinesGeneral = function (ctx, opt) {
   const nMargin = segs.L.length + segs.R.length;
   if (!segs.L.length || !segs.R.length) { say(nMargin ? 'a margin vine could not be placed on one side' : 'no margin vine could be placed'); }
 
+  if (opt.onStage) { try { opt.onStage(finish(), { stage: 'margins', ms: Date.now() - t0 }); } catch (e) { /* a failing listener never stops the plan */ } }
+  const density = opt.density || 'normal', late = () => opt.deadline && Date.now() > opt.deadline;
   /* ---- 3. branches into pockets of free space beside the content ---- */
   const parentAt = (side, r) => segs[side].find(L => L.piece[0] <= r && r <= L.piece[1]);
   let nb = 0;
@@ -49,10 +51,11 @@ window.StitchVinesGeneral = function (ctx, opt) {
     // pockets: runs of rows with at least 16 free columns beyond the margin strip
     const pockets = []; let a = -1;
     for (let r = rowMin; r <= rowFoot; r++) { const L = parentAt(side, r), w = L ? f[r] - inner(L) : 0, ok = w >= 12; if (ok && a < 0) a = r; if ((!ok || r === rowFoot) && a >= 0) { if (r - a >= 16) pockets.push([a, r - 1]); a = -1; } }
-    pockets.forEach(([ra, rb], pi) => {
+    if (density !== 'sparse') pockets.forEach(([ra, rb], pi) => {
+      if (late()) { if (!status.notes.includes('time budget reached')) say('time budget reached: some branches were left out'); return; }
       const rows = rb - ra + 1, L = parentAt(side, rb); if (!L) return;
       let depth = 1e9; for (let r = ra; r <= rb; r++) depth = Math.min(depth, f[r]);
-      const count = rows >= 110 ? 3 : rows >= 60 ? 2 : 1;
+      const count = Math.min(3, (rows >= 110 ? 3 : rows >= 60 ? 2 : 1) + (density === 'rich' && rows >= 40 ? 1 : 0));
       for (let k = 0; k < count; k++) {
         const slice = rows / count, bb = Math.round(rb - k * slice), aa = Math.round(bb - slice + 1);
         const tx = side === 'L' ? cs + Math.min(depth - 3, 14 + Math.round(slice * .35)) : ce - 1 - Math.min(depth - 3, 14 + Math.round(slice * .35)), ty = aa + 5;

@@ -15,7 +15,7 @@ window.StitchVinesFit = function (ctx0, opt) {
   const maxSc = Math.max(...order.map(v => v.sc));
   let start = order.findIndex(v => v.sc >= .7 * maxSc); if (start < 0) start = 0;
   for (let k = start; k < order.length; k++) {
-    const v = order[k], out = window.StitchVinesPlan(v.c, opt); out.u = v.c.u; tried.push(`${v.c.u.toFixed(1)} px stitch: ${(out.limbs || []).length} limbs`);
+    const v = order[k], out = window.StitchVinesPlan(v.c, Object.assign({}, opt, { onStage: opt && opt.onStage ? (o, info) => opt.onStage(o, Object.assign({ u: v.c.u, real: real(o) }, info)) : null })); out.u = v.c.u; tried.push(`${v.c.u.toFixed(1)} px stitch: ${(out.limbs || []).length} limbs`);
     if (!best || (out.limbs || []).length > (best.limbs || []).length) best = out;
     if (real(out)) { best = out; break; } }
   if (!real(best)) { const none = []; none.limbs = []; none.u = best.u; best = none; best.status = Object.assign({}, best.status, { ok: false, message: 'No vines were drawn. This page has a free strip beside the content, but not one that is wide and tall enough for a vine on BOTH sides (a lone vine looks wrong, so none is drawn). Tried: ' + tried.join('; ') + '.' }); }

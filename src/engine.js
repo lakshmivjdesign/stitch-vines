@@ -87,7 +87,7 @@ window.StitchVinesEngine = function (ctx) {
   const margins = {};
   function marginVine(sg, o = {}) {                                                             // sg +1: the left margin (curls to the right at the top), -1: the right margin
     const xIn = o.xIn ?? (sg > 0 ? edgeL - 1.9 : edgeR + 1.9), xOut = o.xOut ?? (sg > 0 ? cs + 1 : ce - 2), yBot = o.yBot ?? rowFoot, yTop = o.yTop ?? rowMin, nm = o.name || (sg > 0 ? 'margin-L' : 'margin-R'); if (Math.abs(xIn - xOut) < .8) { stats.fail.push('margin ' + sg + ' too narrow ' + xIn + ' ' + xOut); return null; }     // no room for a margin vine (narrow screens): none is grown
-    const bud = o.term === 'bud', xc = (xIn + xOut) / 2, A = Math.max(.5, Math.min(3.2, Math.abs(xIn - xOut) / 2)), Lr = 12, La = 15;
+    const bud = o.term === 'bud', xc = (xIn + xOut) / 2, A0 = Math.max(.5, Math.min(3.2, Math.abs(xIn - xOut) / 2)), Lr = 12, La = 15; let A = A0;
     for (const dBot of (o.dBots || [0, 6, 12, 20])) for (const NW of (o.NWs || [17, 23, 31, 41])) for (const r0 of (o.r0s || [9.5, 8.5, 7.5, 6.8])) for (const dTop of (o.dTops || [0, 3, 6, 10, 15])) for (const [hs, rh] of [[1, 6.2]]) {
       const k1 = 1 / r0, dR = Lr / (2 * rh), th0 = -Math.PI / 2 - hs * sg * dR, yStart = yBot + 3 - dBot;                              // the vine runs down beside the footer rule and ends in a bud, so the space above the footer has a long stem to branch from
       const make = lam => { const om = TAU / lam, kw = A * om * om, wEnd = NW * lam / 2, k0 = sg * kw;                      // the heading wobbles around straight up; the wave ends upright and bending inward
@@ -100,7 +100,7 @@ window.StitchVinesEngine = function (ctx) {
       if (A * Math.pow(TAU / lam, 2) < .042) continue;                                       // a margin strip that narrow needs a shorter wave, or the bends are too faint to read as curves
       if (lam < 22 || lam > 90) { stats.fail.push('margin ' + sg + ' lam ' + lam.toFixed(1)); continue; }
       const wv = fit.g.P.slice(Math.round(Lr / DS), Math.round((Lr + fit.mk.wEnd) / DS)); let x0 = xc - (Math.min(...wv.map(p => p[0])) + Math.max(...wv.map(p => p[0]))) / 2;
-      const g = grow(x0, yStart, th0, fit.mk.kf, fit.mk.total, 0, [0, 0], 0); if (g.stop >= 0) { stats.fail.push('margin ' + sg + ' stem stopped at ' + g.P[g.stop].map(v => v.toFixed(1))); continue; }
+      const g = grow(x0, yStart, th0, fit.mk.kf, fit.mk.total, 0, [0, 0], 0); if (g.stop >= 0) { stats.fail.push('margin ' + sg + ' stem stopped at ' + g.P[g.stop].map(v => v.toFixed(1)) + ' (' + g.stop + ' of ' + g.P.length + ', x0 ' + x0.toFixed(1) + ', start y ' + yStart + ', strip ' + xOut.toFixed(1) + '..' + xIn.toFixed(1) + ', lam ' + lam.toFixed(0) + ', NW ' + NW + ')'); continue; }
       const L = { id: ++limbSeq, name: nm, kind: 'margin', side: sg > 0 ? 'L' : 'R', sg, band: -1, parent: null, term: 'spiral', P: g.P, TH: g.TH, S: g.S, K: g.K, stem: g.P, organs: [], head: [], tail: [], children: [] };
       L.sid = newEl(L, 'stem', [x0, yStart], 8); claim(L.sid, cellsOf([g.P]), []);
       const e = g.P.length - 1, tl = bud ? { pts: [g.P[e]], turns: 1, why: '' } : spiralFrom(g, e, sg, r0, L.sid, g.P[e], 9, false); if (tl.turns < .9) { release(L.sid); if (stats.fail.length < 6) stats.fail.push('margin ' + sg + ' top spiral ' + tl.turns.toFixed(2) + ' ' + tl.why); continue; }

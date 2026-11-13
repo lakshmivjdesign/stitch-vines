@@ -9,8 +9,8 @@
        cell(c, r) -> 0 free | 1 text (a vine may pass under words, unless ctx.textClear is set: then it may not) | 2 object (card, image, button: a vine may pass under its middle only)
    Output: an array of polylines [[x, y], ...] in stitch units (a cell's centre is an integer), with .limbs describing every limb for tests/check.js.
    Status: first public cut, taken from one site's working copy; see docs/roadmap.md. */
-window.StitchVinesPlan = function (ctx) {
-  if (!(ctx.heads && ctx.heads.length && ctx.rows && ctx.rows.length)) return window.StitchVinesGeneral(ctx);       // a page without headings-and-rows: the general planner
+window.StitchVinesPlan = function (ctx, opt) {
+  if (!(ctx.heads && ctx.heads.length && ctx.rows && ctx.rows.length)) return window.StitchVinesGeneral(ctx, opt);       // a page without headings-and-rows: the general planner
   const E = window.StitchVinesEngine(ctx);
   const { u, m, W, foot, heads, cs, ce, C, rowMin, rowFoot, NR, kindAt, cardRows, limbs, margins, stats, rnd, rr, seedFor, marginVine, placeLimb, mirror, tryOrgan, mkLeaf, mkRose, mkBud, DS, MINR, D } = E;
   /* ---- the sections: a heading, its intro, then the card row ---- */
