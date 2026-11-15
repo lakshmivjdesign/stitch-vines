@@ -23,7 +23,7 @@ Rules for you:
 3. **Layout:** is the content in a column with empty space to its left and right at desktop widths? If you can, say roughly how wide that empty space is at a 1440 px window and a 910 px window. ["unsure": that is fine, the status message after installing tells you whether it fits]
 4. **Text and contrast:** may vines pass under words? [No. Vines keep one stitch away from all text.] If yes: the text colour and the background colour (WCAG 1.4.3 needs 4.5:1 for normal text, 3:1 for large text between the vine colour and the text colour).
 5. **Look:** `cross` (cross stitch), `charcoal`, or `pencil`? [cross]
-6. **Colours:** any brand colours for stems, leaves, flowers (cross stitch) or one ink colour (charcoal, pencil)? [defaults]
+6. **Ink:** one colour for the whole drawing: `white`, `indigo`, `terracotta` or `charcoal` (black). White needs a darker page, or it only shows as a faint shadow. [indigo]
 7. **Density:** `sparse` (margin vines only), `normal`, or `rich` (more branches where there is room)? [normal]
 8. **Keep clear:** any area vines must stay out of, as a CSS selector or a plain description (a hero video, a sticky sidebar)? [none]
 9. **Late content:** does anything load or change size after the page has loaded (carousels, lazy images, accordions, cookie banners)? [no]
@@ -41,7 +41,7 @@ Rules for you:
     look: 'cross',          // 'cross' | 'charcoal' | 'pencil'
     textClear: true,        // vines keep out of text
     density: 'normal',      // 'sparse' | 'normal' | 'rich'
-    colors: null,           // e.g. { stem: '#1e6432', leaf: '#28963f', flower: '#1e5ac8' }
+    ink: 'indigo',          // 'white' | 'indigo' | 'terracotta' | 'charcoal'
     objects: null,          // extra things to keep clear: a CSS selector such as '.hero, .sidebar'
     status: null            // a CSS selector of an element that should show the status message
   };
@@ -75,7 +75,7 @@ The script sets `window.stitchVines.status` = `{ state, message }` and fires the
 
 ### Tweaks (one line each)
 
-- Look: `look: 'pencil'`. A look never moves anything; you can switch at any time with `stitchVines.setLook('charcoal')` in the browser console.
+- Look: `look: 'pencil'`. Ink: `ink: 'terracotta'`. A look or ink never moves anything; switch any time with `stitchVines.setLook('charcoal')` or `stitchVines.setInk('white')` in the browser console. (`colors: { stem: '#123456' }` replaces the ink with any colour.)
 - Text clear: `textClear: false` lets vines pass under words. Only do this after checking contrast.
 - Fewer or more branches: `density: 'sparse'` or `'rich'`.
 - Which pages: only load the script on the pages that should have vines.

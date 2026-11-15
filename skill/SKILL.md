@@ -1,6 +1,6 @@
 ---
 name: stitch-vines
-description: Add a hand-made vine background (margin vines, branches, leaves, roses, buds, spirals) to a website with one script file. Looks: cross stitch, charcoal, pencil. Grows in a background worker, draws behind the content, keeps clear of text by default. Use when someone wants decorative vines in the empty margins and gaps of a page, or asks why vines did not appear.
+description: Add a hand-made vine background (margin vines, branches, leaves, roses, buds, spirals) to a website with one script file. Looks: cross stitch, charcoal, pencil; one ink each: white, indigo, terracotta or charcoal. Grows in a background worker, draws behind the content, keeps clear of text by default. Use when someone wants decorative vines in the empty margins and gaps of a page, or asks why vines did not appear.
 ---
 
 # stitch-vines (skill)
@@ -14,7 +14,7 @@ Read `PROMPT.md` in this repository: it holds the questionnaire, the snippet, th
 1. Which page(s) and platform; can a `<script>` tag be added?
 2. Is there empty space left and right of the content? How wide at 1440 and 910 px?
 3. May vines pass under text? Default **no**. If yes, measure contrast (WCAG 1.4.3: 4.5:1 normal, 3:1 large) between the vine colour and the text colour before drawing under words.
-4. Look (`cross`, `charcoal`, `pencil`), colours, density (`sparse`, `normal`, `rich`), areas to keep clear.
+4. Look (`cross`, `charcoal`, `pencil`), ink (`white`, `indigo`, `terracotta`, `charcoal`), density (`sparse`, `normal`, `rich`), areas to keep clear.
 5. Late content, Content-Security-Policy.
 
 ## Steps
@@ -27,7 +27,7 @@ Read `PROMPT.md` in this repository: it holds the questionnaire, the snippet, th
 
 ## Tweaks
 
-`look`, `colors`, `textClear`, `density`, `objects` (extra selector to keep clear), `maxHeight`, `zIndex`, `status`, `toast`. Runtime: `stitchVines.setLook(name)`, `stitchVines.refresh()`, `stitchVines.stop()`.
+`look`, `ink`, `colors`, `textClear`, `density`, `objects` (extra selector to keep clear), `maxHeight`, `zIndex`, `status`, `toast`. Runtime: `stitchVines.setLook(name)`, `stitchVines.setInk(name)`, `stitchVines.refresh()`, `stitchVines.stop()`.
 
 ## Do not
 

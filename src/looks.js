@@ -2,6 +2,9 @@
 //   StitchStyles[name](svg, ctx, res)  ->  a count for the status line
 (function () {
   const NS = 'http://www.w3.org/2000/svg';
+  // One ink per drawing (monochrome). The four inks: white, indigo, terracotta, charcoal. `colors.stem` (or colors: { stem }) overrides it with any css colour.
+  const INKS = { white: '#ffffff', indigo: '#2A3A8F', terracotta: '#9A3A1E', charcoal: '#1D1C1A' };
+  const inkOf = (opt, dflt) => (opt && opt.colors && (opt.colors.stem || opt.colors.leaf)) || INKS[opt && opt.ink] || INKS[dflt];
   const el = (name, attrs, parent) => { const e = document.createElementNS(NS, name); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
   const r1 = v => Math.round(v * 10) / 10;
   const thin = (pl, n) => { const o = []; for (let i = 0; i < pl.length; i += n) o.push(pl[i]); if ((pl.length - 1) % n) o.push(pl[pl.length - 1]); return o; };
@@ -18,7 +21,7 @@
 
   /* ---- cross stitch: one small cross per cell ---- */
   function cross(svg, ctx, res, opt) {
-    const F = frame(ctx), u = ctx.u, s = u * .32, claimed = new Map(), colours = Object.assign({ stem: '#1e6432', leaf: '#28963f', flower: '#1e5ac8' }, opt && opt.colors);
+    const F = frame(ctx), u = ctx.u, s = u * .32, claimed = new Map(), ink = inkOf(opt, 'indigo'), colours = Object.assign({ stem: ink, leaf: ink, flower: ink }, opt && opt.colors);
     ['stem', 'leaf', 'flower'].forEach(kind => cellsOf(res.parts[kind]).forEach(([c, r]) => claimed.set(c * 4096 + r, [c, r, kind])));       // one class per cell: flowers over leaves over stems
     const d = { stem: [], leaf: [], flower: [] };
     claimed.forEach(([c, r, kind]) => { const x = ctx.m + (c + .5) * u, y = (r + .5) * u; d[kind].push(`M${(x - s).toFixed(1)} ${(y - s).toFixed(1)}l${(2 * s).toFixed(1)} ${(2 * s).toFixed(1)}M${(x + s).toFixed(1)} ${(y - s).toFixed(1)}l${(-2 * s).toFixed(1)} ${(2 * s).toFixed(1)}`); });
@@ -28,7 +31,7 @@
 
   /* ---- charcoal: soft dark strokes with a rough edge, a grainy fill and a faint smudge underneath ---- */
   function charcoal(svg, ctx, res, opt) {
-    const F = frame(ctx), u = ctx.u, df = defs(svg), INK = (opt && opt.colors && opt.colors.stem) || '#2a2724';
+    const F = frame(ctx), u = ctx.u, df = defs(svg), INK = inkOf(opt, 'charcoal');
     df.innerHTML = '<filter id="sv-blur" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="2.2"/></filter>'
       + '<filter id="sv-charcoal" x="-2%" y="-2%" width="104%" height="104%"><feTurbulence type="fractalNoise" baseFrequency="0.7" numOctaves="2" seed="4" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G" result="d"/>'
       + '<feTurbulence type="fractalNoise" baseFrequency="1.6" numOctaves="1" seed="9" result="g"/><feColorMatrix in="g" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1.7 0 0 0 -0.05" result="grain"/><feComposite in="d" in2="grain" operator="in"/></filter>';
@@ -44,7 +47,7 @@
 
   /* ---- pencil: a hard graphite line, drawn twice with a hair of difference, leaves lightly hatched, buds and roses shaded; a little paper grain ---- */
   function pencil(svg, ctx, res, opt) {
-    const F = frame(ctx), u = ctx.u, ink = (opt && opt.colors && opt.colors.stem) || '#3f3d3a', df = defs(svg);
+    const F = frame(ctx), u = ctx.u, ink = inkOf(opt, 'charcoal'), df = defs(svg);
     df.innerHTML = '<filter id="sv-pencil" x="-2%" y="-2%" width="104%" height="104%"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="1.1" xChannelSelector="R" yChannelSelector="G" result="d"/>'
       + '<feTurbulence type="fractalNoise" baseFrequency="2.2" numOctaves="1" seed="3" result="g"/><feColorMatrix in="g" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.6 1.55" result="grain"/><feComposite in="d" in2="grain" operator="in"/></filter>';
     const g = group(svg, { stroke: ink, filter: 'url(#sv-pencil)' });
@@ -62,5 +65,6 @@
   window.StitchStyles = { cross, charcoal, pencil };
   window.StitchStyleNames = { cross: 'Cross stitch', charcoal: 'Charcoal', pencil: 'Pencil' };
   // the main colours each look draws with, so a page can check them against its text colour (WCAG contrast)
-  window.StitchStyleColours = { cross: ['#1e6432', '#28963f', '#1e5ac8'], charcoal: ['#2a2724'], pencil: ['#3f3d3a'] };
+  window.StitchInks = INKS;
+  window.StitchStyleColours = { cross: Object.values(INKS), charcoal: Object.values(INKS), pencil: Object.values(INKS) };
 })();

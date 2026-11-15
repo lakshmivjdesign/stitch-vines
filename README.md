@@ -1,13 +1,13 @@
 # stitch-vines
 
-Hand-made vines that grow in the empty margins and gaps of a web page, by rules. One script file, three looks (cross stitch, charcoal, pencil), no server, no build step for you.
+Hand-made vines that grow in the empty margins and gaps of a web page, by rules. One script file, three looks (cross stitch, charcoal, pencil) in four inks, no server, no build step for you.
 
 Made with Claude. MIT licence.
 
 ## Add it to a page (two lines)
 
 ```html
-<script>window.StitchVinesConfig = { look: 'cross' };</script>
+<script>window.StitchVinesConfig = { look: 'cross', ink: 'indigo' };</script>
 <script src="stitch-vines.js" defer></script>
 ```
 
@@ -31,7 +31,7 @@ Works on sites with **empty side margins of about 24 px or more** (it shrinks th
 - 5 live public pages that were not in the test set: vines grew on 9 of 10 loads (5 pages at 910 and 1440 px); the tenth said the page does not fit.
 - Speed: planning takes about 1.5 s on a typical layout in Node and up to about 6 s on the longest (median 1.5 s, 90th percentile 3.5 s). In a browser the two example pages plan in under 0.5 s even with the CPU slowed 4 times; the 5 live pages took 0.1 to 0.8 s at normal speed (not measured slowed). Margin vines appear first; branches stop after a 3 s budget. A long page on a slow phone can take longer: it gives up after 15 s and says so. The page is never blocked.
 - Layout shift: none caused (CLS under 0.001 on the examples, nothing moves); scrolling stays at 60 fps in the example runs; the cache for a page is about 60 to 90 KB.
-- The cross stitch look here uses green and blue threads, not white on dots. The author's own site look (white thread over a faint shadow) is not matched; use `colors` to set thread colours.
+- Every look is monochrome, in one of four inks: white, indigo, terracotta or charcoal black. White shows as a faint shadow on a light page, so use it on a darker one.
 - Not done: scroll-growing vines, fruit, a server.
 
 ## What is in the repository

@@ -7,11 +7,12 @@
   const CORE_SRC = __CORE_SRC__, WORKER_GLUE = __WORKER_GLUE__;       // the engine, planner and worker code as text, run in the worker (filled in by tools/build.js)
   const defaults = {
     look: 'cross',                // 'cross' | 'charcoal' | 'pencil'
+    ink: 'indigo',                // one colour for the whole drawing: 'white' | 'indigo' | 'terracotta' | 'charcoal'
     textClear: true,              // vines keep out of text (WCAG). false: they may pass under words; then YOU check the contrast
     density: 'normal',            // 'sparse' (margin vines only) | 'normal' | 'rich' (more branches where there is room)
     maxHeight: 10000,             // plan the first N css px of the page (long pages: vines for the first screens)
     zIndex: -1,                   // the layer sits behind the content; raise it if your page paints a background over it
-    colors: null,                 // { stem, leaf, flower } css colours (cross stitch) or { stem } (charcoal, pencil)
+    colors: null,                 // optional: { stem } with any css colour replaces the ink
     objects: null,                // css selector for what vines must stay out of; null: images, video, canvas, svg, iframes, figures, cards, buttons, form controls
     ignore: '[data-stitch-ignore]',
     budgetMs: 3000,               // time the worker may spend on branches after the margin vines (they appear first)
@@ -22,7 +23,7 @@
     debug: false
   };
   const cfg = Object.assign({}, defaults, window.StitchVinesConfig || {});
-  const me = document.currentScript; if (me) for (const k of ['look', 'density', 'status']) if (me.dataset && me.dataset[k]) cfg[k] = me.dataset[k];
+  const me = document.currentScript; if (me) for (const k of ['look', 'ink', 'density', 'status']) if (me.dataset && me.dataset[k]) cfg[k] = me.dataset[k];
   const A = window.StitchVinesAdapter, NS = 'http://www.w3.org/2000/svg', SIZES = [6.5, 5.5, 4.5];
   let worker = null, token = 0, lastW = -1, last = null, timer = 0, started = false;
   const api = window.stitchVines = { config: cfg, status: { state: 'idle', message: 'Not started.' }, stats: {} };
@@ -46,7 +47,8 @@
     svg.id = 'stitch-vines-layer'; svg.setAttribute('aria-hidden', 'true'); svg.setAttribute('focusable', 'false'); svg.setAttribute('data-stitch-ignore', '');
     svg.setAttribute('viewBox', `0 0 ${r.W} ${r.H}`); svg.setAttribute('preserveAspectRatio', 'none');
     svg.style.cssText = `position:absolute;left:0;top:0;width:${r.W}px;height:${r.H}px;overflow:hidden;pointer-events:none;z-index:${cfg.zIndex};` + (reduced() ? '' : 'opacity:0;transition:opacity .5s');
-    const t0 = performance.now(), res = unpack(r); window.StitchStyles[cfg.look] ? window.StitchStyles[look](svg, { u: r.u, m: r.m, W: r.W }, res, { colors: cfg.colors }) : 0;
+    if (cfg.ink === 'white' && !(cfg.colors && (cfg.colors.stem || cfg.colors.leaf))) svg.style.filter = 'drop-shadow(0 1px 1px rgba(74,58,36,.45))';          // white thread: only a faint shadow keeps it readable on paper
+    const t0 = performance.now(), res = unpack(r); window.StitchStyles[cfg.look] ? window.StitchStyles[look](svg, { u: r.u, m: r.m, W: r.W }, res, { colors: cfg.colors, ink: cfg.ink }) : 0;
     document.body.insertBefore(svg, document.body.firstChild);
     const b = svg.getBoundingClientRect(); const dx = -(b.left + window.pageXOffset), dy = -(b.top + window.pageYOffset); if (Math.abs(dx) > .5 || Math.abs(dy) > .5) svg.style.transform = `translate(${dx}px,${dy}px)`;   // a positioned body: the layer still starts at the page corner
     if (!reduced()) requestAnimationFrame(() => { svg.style.opacity = '1'; });
@@ -96,6 +98,7 @@
     addEventListener('resize', () => { if (document.documentElement.clientWidth === lastW) return; clearTimeout(timer); token++; clear(); timer = setTimeout(run, 500); }); };
   api.refresh = () => { run(); };
   api.stop = () => { token++; clear(); if (worker) { try { worker.terminate(); } catch (e) { /* */ } worker = null; } say('idle', 'Stopped.'); };
+  api.setInk = name => { if (!window.StitchInks || !window.StitchInks[name]) return false; cfg.ink = name; if (last) draw(last); return true; };
   api.setLook = name => { if (!window.StitchStyles[name]) return false; cfg.look = name; if (last) draw(last); return true; };
   if (cfg.auto) { const go = () => api.start(); if (document.readyState === 'complete') setTimeout(go, 0); else addEventListener('load', () => setTimeout(go, 0)); }
 })();

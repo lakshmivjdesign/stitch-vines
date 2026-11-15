@@ -4,7 +4,7 @@
 2. **Add two lines before `</body>`:**
 
 ```html
-<script>window.StitchVinesConfig = { look: 'cross' };</script>
+<script>window.StitchVinesConfig = { look: 'cross', ink: 'indigo' };</script>
 <script src="stitch-vines.js" defer></script>
 ```
 
@@ -17,15 +17,16 @@
 | setting | values | default | what it does |
 |---|---|---|---|
 | `look` | `'cross'`, `'charcoal'`, `'pencil'` | `'cross'` | how the same vines are drawn. A look never moves anything. |
+| `ink` | `'white'`, `'indigo'`, `'terracotta'`, `'charcoal'` | `'indigo'` | one colour for the whole drawing (monochrome). White needs a dark page; on a light page it shows only as a faint shadow. |
 | `textClear` | `true`, `false` | `true` | vines keep one stitch away from all words. `false` lets them pass under words: check contrast first. |
 | `density` | `'sparse'`, `'normal'`, `'rich'` | `'normal'` | sparse: margin vines only. rich: more branches where there is room. |
-| `colors` | `{ stem, leaf, flower }` or `{ stem }` | look's own | css colours. |
+| `colors` | `{ stem: '#hex' }` | none | any css colour instead of the ink. |
 | `objects` | css selector | images, video, canvas, svg, iframes, figures, cards, buttons, form controls | what vines must stay out of. Add your own, for example `'img, svg, .hero'`. |
 | `maxHeight` | px | `10000` | plan only the first N px of a long page. |
 | `zIndex` | number | `-1` | raise to `0` if your page paints a background over the layer. |
 | `status` | css selector | none | element that shows the status message. |
 
-In the console: `stitchVines.setLook('pencil')`, `stitchVines.refresh()` (after late content), `stitchVines.stop()`.
+In the console: `stitchVines.setLook('pencil')`, `stitchVines.setInk('terracotta')`, `stitchVines.refresh()` (after late content), `stitchVines.stop()`.
 
 ## An AI assistant can do this for you
 
