@@ -59,10 +59,11 @@ window.StitchVinesGeneral = function (ctx, opt) {
       const count = opt.hug === false && density === 'rich' && rows >= 150 ? Math.min(6, Math.ceil(rows / 45)) : Math.min(3, (rows >= 110 ? 3 : rows >= 60 ? 2 : 1) + (density === 'rich' && rows >= 40 ? 1 : 0));   // an empty side beside the content, asked to be covered: a branch about every 45 rows
       for (let k = 0; k < count; k++) {
         const slice = rows / count, bb = Math.round(rb - k * slice), aa = Math.round(bb - slice + 1);
-        const gap = slice < 50, flip = (Math.round(ra / 40) + (side === 'R' ? 1 : 0)) % 2 === 0, small = gap && !flip;               // between sections: one big branch, one small, swapping sides
-        const inL = inner(L), reach = Math.min(depth - inL - 3, Math.round(((gap ? 30 : (opt.hug === false ? 40 : 14)) + slice * (gap ? .45 : (opt.hug === false ? 1.3 : .35))) * (small ? .55 : 1))), tx = side === 'L' ? cs + inL + reach : ce - 1 - inL - reach, ty = gap ? bb - Math.round(slice * (small ? .35 : .5)) : aa + 5;
+        const wideSide = opt.hug === false && rows >= 100, gap = slice < 50 && !wideSide, flip = (Math.round(ra / 40) + (side === 'R' ? 1 : 0)) % 2 === 0, small = gap && !flip;               // between sections: one big branch, one small, swapping sides
+        let dS = depth; if (opt.hug === false) { dS = 1e9; for (let r = aa; r <= bb; r++) dS = Math.min(dS, f[r]); }          // not hugging: each branch reaches as far as ITS rows are free (up to the page middle)
+        const inL = inner(L), reach = opt.hug === false && !gap ? Math.max(8, dS - inL - 4) : Math.min(depth - inL - 3, Math.round(((gap ? 30 : (opt.hug === false ? 40 : 14)) + slice * (gap ? .45 : (opt.hug === false ? 1.3 : .35))) * (small ? .55 : 1))), tx = side === 'L' ? cs + inL + reach : ce - 1 - inL - reach, ty = gap ? bb - Math.round(slice * (small ? .35 : .5)) : aa + 5;
         const big = slice >= 45 || (gap && !small);
-        const spec = { name: `p${side}${pi}.${k}`, kind: big ? 'cover' : 'small', side, sgn: sg, band: pi, retries: 2, search: opt.hug === false && !gap ? 240 : 130, nl: opt.hug === false && !gap ? [5, 8] : [3, 5], node: [bb - 10, bb], T: [tx, ty], term: k % 2 ? 'bud' : 'spiral', alts: [{ term: k % 2 ? 'spiral' : 'bud' }], clear: 2, leaves: big ? 4 : 3, leaf: big ? 11 : 9, roses: big && k === 0 ? [[.45, 4.5]] : undefined };
+        const spec = { name: `p${side}${pi}.${k}`, kind: big ? 'cover' : 'small', side, sgn: sg, band: pi, retries: 2, search: opt.hug === false && !gap ? 240 : 130, nl: opt.hug === false && !gap ? [7, 10] : [3, 5], node: [bb - 10, bb], T: [tx, ty], term: k % 2 ? 'bud' : 'spiral', alts: [{ term: k % 2 ? 'spiral' : 'bud' }], clear: 2, leaves: wideSide ? 10 : big ? 4 : 3, leaf: big ? 11 : 9, roses: wideSide ? [[.3, 4.6], [.62, 4]] : big && k === 0 ? [[.45, 4.5]] : undefined };
         if (placeLimb(spec, L)) nb++;
       }
     });
