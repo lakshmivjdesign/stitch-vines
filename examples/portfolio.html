@@ -37,5 +37,5 @@ body.dark{background-color:#1d1b18;color:#f1ece0}body.dark html{background:#1d1b
 <footer><div>Footer line</div></footer>
 <script>window.StitchVinesConfig={status:'#sv-status',look:new URLSearchParams(location.search).get('look')||'cross',ink:new URLSearchParams(location.search).get('ink')||'indigo'}</script>
 <p id="sv-status" data-stitch-ignore style="position:fixed;bottom:6px;left:8px;margin:0;font:12px system-ui;background:#fff8;padding:2px 6px"></p>
-<script>/* the dot grid sits on the same lattice as the stitches */document.addEventListener('stitchvines:status',function(){var l=window.stitchVines&&window.stitchVines.lattice;if(!l)return;var s=document.body.style;s.setProperty('--u',l.u+'px');s.setProperty('--ox',(l.m-l.u/2)+'px');s.setProperty('--oy',(-l.u/2)+'px')})</script>
+<script>/* the dot grid sits on the same lattice as the stitches */document.addEventListener('stitchvines:status',function(){var l=window.stitchVines&&window.stitchVines.lattice;if(!l)return;var s=document.body.style;s.setProperty('--u',l.u+'px');s.setProperty('--ox',l.m+'px');s.setProperty('--oy','0px')})</script>
 <script src="../dist/stitch-vines.js"></script></body></html>

@@ -21,11 +21,11 @@
 
   /* ---- cross stitch: one small cross per cell ---- */
   function cross(svg, ctx, res, opt) {
-    const F = frame(ctx), u = ctx.u, s = u * .32, claimed = new Map(), ink = inkOf(opt, 'indigo'), colours = Object.assign({ stem: ink, leaf: ink, flower: ink }, opt && opt.colors);
+    const F = frame(ctx), u = ctx.u, s = u / 2, claimed = new Map(), ink = inkOf(opt, 'indigo'), colours = Object.assign({ stem: ink, leaf: ink, flower: ink }, opt && opt.colors);
     ['stem', 'leaf', 'flower'].forEach(kind => cellsOf(res.parts[kind]).forEach(([c, r]) => claimed.set(c * 4096 + r, [c, r, kind])));       // one class per cell: flowers over leaves over stems
     const d = { stem: [], leaf: [], flower: [] };
     claimed.forEach(([c, r, kind]) => { const x = ctx.m + (c + .5) * u, y = (r + .5) * u; d[kind].push(`M${(x - s).toFixed(1)} ${(y - s).toFixed(1)}l${(2 * s).toFixed(1)} ${(2 * s).toFixed(1)}M${(x + s).toFixed(1)} ${(y - s).toFixed(1)}l${(-2 * s).toFixed(1)} ${(2 * s).toFixed(1)}`); });
-    ['stem', 'leaf', 'flower'].forEach(kind => path(group(svg, { stroke: colours[kind], 'stroke-width': (u * .22).toFixed(2) }), d[kind].join('')));
+    ['stem', 'leaf', 'flower'].forEach(kind => path(group(svg, { stroke: colours[kind], 'stroke-width': Math.max(1.4, u * .29).toFixed(2) }), d[kind].join('')));
     return claimed.size + ' stitches';
   }
 

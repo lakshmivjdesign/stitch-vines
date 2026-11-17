@@ -180,7 +180,7 @@ window.StitchVinesEngine = function (ctx) {
     const L = { id: ++limbSeq, name: spec.name, kind: spec.kind, side: spec.side, band: spec.band, parent: par.id, term: spec.term, stem: P, tail: tail || [], head: [], organs: [], children: [], P, TH: g.TH.slice(0, i + 1), S: g.S.slice(0, i + 1), K: g.K.slice(0, i + 1), sgn: spec.sgn ?? cd.gen.lobes[0].sg };
     L.sid = newEl(L, "stem", at, 14); const cells = cellsOf([stemPoly]); if (blocked(cells, [], par.sid, at, 14)) { why.late = (why.late || 0) + 1; return null; } claim(L.sid, cells, []);
     if (spec.term !== 'spiral') { const n = P.length - 1, o = spec.term === 'bud' ? tryOrgan(L, mkBud, n, [0], [spec.endSize || 9, 7.5, 6], { ang: 0, role: 'terminal' }) : tryOrgan(L, mkRose, n, [0], [spec.endSize || 5, 4.2, 3.5], { ang: 0, role: 'terminal' }); if (!o) { why.term = (why.term || 0) + 1; undo(L); return null; } }
-    limbs.push(L);
+    L.node = at; (par.children = par.children || []).push(L); limbs.push(L);
     (spec.shoots || []).forEach(sh => { const c = placeLimb({ search: 150, nl: [2, 3], roomW: 30, minLen: 140, ...sh, name: spec.name + '/' + sh.kind, side: spec.side, band: spec.band, T: sh.T.map((v, k) => k ? v : mirror(spec.side, v)), wp: (sh.wp || []).map(([x, y, t]) => [mirror(spec.side, x), y, t]) }, L); if (c) L.children.push(c); });   // shoots first: they need room beside the stem
     seedFor(spec.name + '#dress'); if (!dressLimb(L, spec)) { why.dress = (why.dress || 0) + 1; undo(L); return null; }
     return L; }
@@ -212,10 +212,11 @@ window.StitchVinesEngine = function (ctx) {
   function mirror(side, x) { return side === 'L' ? x : (C - 1) - x; }
   function marginLeaves(L) { seedFor(L.name + '#leaves'); const n = L.P.length - 1, total = L.S[n]; let s = 12, k = 0;                             // the margin strip is a few stitches wide: the leaves face inward
     while (s < total - 30) { const t = s / total, sz = Math.max(6, 7 + 5 * Math.sin(Math.PI * t)), i = Math.round(s / DS);
-      const o = tryOrgan(L, mkLeaf, i, [L.sg], [sz, sz * .85, sz * .7].filter(v => v >= 5), { angs: [50, 38, 62] }); if (o) { s += 12 + k % 2 * 4 + 6 * Math.abs(.5 - t); k++; } else s += 2; } }
+      const o = nearChild(L, i) ? null : tryOrgan(L, mkLeaf, i, [L.sg], [sz, sz * .85, sz * .7].filter(v => v >= 5), { angs: [50, 38, 62] }); if (o) { s += 12 + k % 2 * 4 + 6 * Math.abs(.5 - t); k++; } else s += 2; } }
+  const nearChild = (L, i) => (L.children || []).some(c => c.node && Math.hypot(L.P[i][0] - c.node[0], L.P[i][1] - c.node[1]) < 15);       // no leaf or rose crowds the spot where a branch leaves
   function marginRoses(L) { seedFor(L.name + '#roses'); const n = L.P.length - 1, total = L.S[n]; let prevR = 99, k = 0;                    // roses are big near the base and smaller further up; half of them carry a bud beside them
     for (let s = 30; s < total - 40; s += 80) { const t = s / total, R = Math.min(prevR, 6.2 - 2.6 * t), sizes = [R, R * .88, R * .76, R * .66].filter(v => v >= 3.4); let o = null, at0 = 0;
-      for (const off of [0, 6, -6, 12, -12, 18, -18, 24]) { const i = Math.round((s + off) / DS); if (i < 24 || i > n - 30) continue; o = tryOrgan(L, mkRose, i, k % 2 ? [L.sg, -L.sg] : [-L.sg, L.sg], sizes, { angs: [70, 56, 84] }); if (o) { at0 = i; break; } }
+      for (const off of [0, 6, -6, 12, -12, 18, -18, 24]) { const i = Math.round((s + off) / DS); if (i < 24 || i > n - 30) continue; o = nearChild(L, i) ? null : tryOrgan(L, mkRose, i, k % 2 ? [L.sg, -L.sg] : [-L.sg, L.sg], sizes, { angs: [70, 56, 84] }); if (o) { at0 = i; break; } }
       if (o) { prevR = o.size; k++; if (roseCount++ % 2 === 0) for (const off of [24, 30, -24, 36]) { const j = at0 + off; if (j > 24 && j < n - 10 && tryOrgan(L, mkBud, j, [-o.side, o.side], [7, 6, 5.5], { angs: [50, 62] })) break; } } } }
   const finish = () => { const out = []; limbs.forEach(L => { out.push(L.head.concat(L.stem, L.tail.slice(1))); L.organs.forEach(o => o.polys.forEach(p => out.push(p))); }); out.limbs = limbs; stats.limbs = limbs.length; return out; };
   return { ctx, u, m, W, foot, heads, cell, textClear, PHI, D, TAU, MINR, DS, cs, ce, NC, C, rowMin, rowFoot, NR, kindAt, hid, cardRows, limbs, margins, stats, rnd, rr, seedFor,

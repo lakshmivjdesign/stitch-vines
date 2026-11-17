@@ -180,7 +180,7 @@ window.StitchVinesEngine = function (ctx) {
     const L = { id: ++limbSeq, name: spec.name, kind: spec.kind, side: spec.side, band: spec.band, parent: par.id, term: spec.term, stem: P, tail: tail || [], head: [], organs: [], children: [], P, TH: g.TH.slice(0, i + 1), S: g.S.slice(0, i + 1), K: g.K.slice(0, i + 1), sgn: spec.sgn ?? cd.gen.lobes[0].sg };
     L.sid = newEl(L, "stem", at, 14); const cells = cellsOf([stemPoly]); if (blocked(cells, [], par.sid, at, 14)) { why.late = (why.late || 0) + 1; return null; } claim(L.sid, cells, []);
     if (spec.term !== 'spiral') { const n = P.length - 1, o = spec.term === 'bud' ? tryOrgan(L, mkBud, n, [0], [spec.endSize || 9, 7.5, 6], { ang: 0, role: 'terminal' }) : tryOrgan(L, mkRose, n, [0], [spec.endSize || 5, 4.2, 3.5], { ang: 0, role: 'terminal' }); if (!o) { why.term = (why.term || 0) + 1; undo(L); return null; } }
-    limbs.push(L);
+    L.node = at; (par.children = par.children || []).push(L); limbs.push(L);
     (spec.shoots || []).forEach(sh => { const c = placeLimb({ search: 150, nl: [2, 3], roomW: 30, minLen: 140, ...sh, name: spec.name + '/' + sh.kind, side: spec.side, band: spec.band, T: sh.T.map((v, k) => k ? v : mirror(spec.side, v)), wp: (sh.wp || []).map(([x, y, t]) => [mirror(spec.side, x), y, t]) }, L); if (c) L.children.push(c); });   // shoots first: they need room beside the stem
     seedFor(spec.name + '#dress'); if (!dressLimb(L, spec)) { why.dress = (why.dress || 0) + 1; undo(L); return null; }
     return L; }
@@ -212,10 +212,11 @@ window.StitchVinesEngine = function (ctx) {
   function mirror(side, x) { return side === 'L' ? x : (C - 1) - x; }
   function marginLeaves(L) { seedFor(L.name + '#leaves'); const n = L.P.length - 1, total = L.S[n]; let s = 12, k = 0;                             // the margin strip is a few stitches wide: the leaves face inward
     while (s < total - 30) { const t = s / total, sz = Math.max(6, 7 + 5 * Math.sin(Math.PI * t)), i = Math.round(s / DS);
-      const o = tryOrgan(L, mkLeaf, i, [L.sg], [sz, sz * .85, sz * .7].filter(v => v >= 5), { angs: [50, 38, 62] }); if (o) { s += 12 + k % 2 * 4 + 6 * Math.abs(.5 - t); k++; } else s += 2; } }
+      const o = nearChild(L, i) ? null : tryOrgan(L, mkLeaf, i, [L.sg], [sz, sz * .85, sz * .7].filter(v => v >= 5), { angs: [50, 38, 62] }); if (o) { s += 12 + k % 2 * 4 + 6 * Math.abs(.5 - t); k++; } else s += 2; } }
+  const nearChild = (L, i) => (L.children || []).some(c => c.node && Math.hypot(L.P[i][0] - c.node[0], L.P[i][1] - c.node[1]) < 15);       // no leaf or rose crowds the spot where a branch leaves
   function marginRoses(L) { seedFor(L.name + '#roses'); const n = L.P.length - 1, total = L.S[n]; let prevR = 99, k = 0;                    // roses are big near the base and smaller further up; half of them carry a bud beside them
     for (let s = 30; s < total - 40; s += 80) { const t = s / total, R = Math.min(prevR, 6.2 - 2.6 * t), sizes = [R, R * .88, R * .76, R * .66].filter(v => v >= 3.4); let o = null, at0 = 0;
-      for (const off of [0, 6, -6, 12, -12, 18, -18, 24]) { const i = Math.round((s + off) / DS); if (i < 24 || i > n - 30) continue; o = tryOrgan(L, mkRose, i, k % 2 ? [L.sg, -L.sg] : [-L.sg, L.sg], sizes, { angs: [70, 56, 84] }); if (o) { at0 = i; break; } }
+      for (const off of [0, 6, -6, 12, -12, 18, -18, 24]) { const i = Math.round((s + off) / DS); if (i < 24 || i > n - 30) continue; o = nearChild(L, i) ? null : tryOrgan(L, mkRose, i, k % 2 ? [L.sg, -L.sg] : [-L.sg, L.sg], sizes, { angs: [70, 56, 84] }); if (o) { at0 = i; break; } }
       if (o) { prevR = o.size; k++; if (roseCount++ % 2 === 0) for (const off of [24, 30, -24, 36]) { const j = at0 + off; if (j > 24 && j < n - 10 && tryOrgan(L, mkBud, j, [-o.side, o.side], [7, 6, 5.5], { angs: [50, 62] })) break; } } } }
   const finish = () => { const out = []; limbs.forEach(L => { out.push(L.head.concat(L.stem, L.tail.slice(1))); L.organs.forEach(o => o.polys.forEach(p => out.push(p))); }); out.limbs = limbs; stats.limbs = limbs.length; return out; };
   return { ctx, u, m, W, foot, heads, cell, textClear, PHI, D, TAU, MINR, DS, cs, ce, NC, C, rowMin, rowFoot, NR, kindAt, hid, cardRows, limbs, margins, stats, rnd, rr, seedFor,
@@ -251,8 +252,8 @@ window.StitchVinesGeneral = function (ctx, opt) {
     const sg = side === 'L' ? 1 : -1;
     pieces(side).forEach(([top, bot], k) => {
       let edge = 1e9; for (let r = top; r <= bot; r++) edge = Math.min(edge, free[side][r]);
-      const edge2 = Math.min(edge, STRIPMAX + 1);                                       // the strip the vine may use: at most STRIPMAX columns next to the page edge
-      const xIn = side === 'L' ? cs + edge2 - 1.9 : ce - 1 - edge2 + 1.9, xOut = side === 'L' ? cs + 1 : ce - 2;
+      const edge2 = edge;                                                              // the strip sits right beside the content, at most STRIPMAX columns wide (on a wide screen the vine hugs the content, not the page edge)
+      const xIn = side === 'L' ? cs + edge2 - 1.9 : ce - 1 - edge2 + 1.9, xOut = side === 'L' ? Math.max(cs + 1, xIn - STRIPMAX) : Math.min(ce - 2, xIn + STRIPMAX);
       const A = Math.max(.5, Math.min(3.2, Math.abs(xIn - xOut) / 2)), lamMax = 2 * Math.PI * Math.sqrt(A / .042) - .5;
       const yBot = bot - 11, yTop = top + 1, H = yBot - yTop - 30;                      // 11 rows below the start for the base bud; 30 for the first lobe and the top arch
       const heads = Math.abs(xIn - xOut) < 12 ? [[1, 16], [1, 10], [1, 6.2]] : [[1, 6.2]];                            // a narrow strip: start with a gentler head lobe
@@ -272,7 +273,7 @@ window.StitchVinesGeneral = function (ctx, opt) {
   const parentAt = (side, r) => segs[side].find(L => L.piece[0] <= r && r <= L.piece[1]);
   let nb = 0;
   for (const side of ['L', 'R']) {
-    const sg = side === 'L' ? 1 : -1, f = free[side], inner = L => { let m = 1e9; for (let r = L.piece[0]; r <= L.piece[1]; r++) m = Math.min(m, f[r]); return Math.min(m, STRIPMAX + 2); };
+    const sg = side === 'L' ? 1 : -1, f = free[side], inner = L => { let m = 1e9; for (let r = L.piece[0]; r <= L.piece[1]; r++) m = Math.min(m, f[r]); return m; };
     // pockets: runs of rows with at least 16 free columns beyond the margin strip
     const pockets = []; let a = -1;
     for (let r = rowMin; r <= rowFoot; r++) { const L = parentAt(side, r), w = L ? f[r] - inner(L) : 0, ok = w >= 12; if (ok && a < 0) a = r; if ((!ok || r === rowFoot) && a >= 0) { if (r - a >= 16) pockets.push([a, r - 1]); a = -1; } }
@@ -283,8 +284,9 @@ window.StitchVinesGeneral = function (ctx, opt) {
       const count = Math.min(3, (rows >= 110 ? 3 : rows >= 60 ? 2 : 1) + (density === 'rich' && rows >= 40 ? 1 : 0));
       for (let k = 0; k < count; k++) {
         const slice = rows / count, bb = Math.round(rb - k * slice), aa = Math.round(bb - slice + 1);
-        const reach = Math.min(depth - 3, (slice < 50 ? 30 : 14) + Math.round(slice * (slice < 50 ? .45 : .35))), tx = side === 'L' ? cs + reach : ce - 1 - reach, ty = slice < 50 ? bb - Math.round(slice * .5) : aa + 5;   // a gap: the branch rises, then runs sideways into it; a tall space: it climbs
-        const big = slice >= 45;
+        const gap = slice < 50, flip = (Math.round(ra / 40) + (side === 'R' ? 1 : 0)) % 2 === 0, small = gap && !flip;               // between sections: one big branch, one small, swapping sides
+        const inL = inner(L), reach = Math.min(depth - inL - 3, Math.round(((gap ? 30 : 14) + slice * (gap ? .45 : .35)) * (small ? .55 : 1))), tx = side === 'L' ? cs + inL + reach : ce - 1 - inL - reach, ty = gap ? bb - Math.round(slice * (small ? .35 : .5)) : aa + 5;
+        const big = slice >= 45 || (gap && !small);
         const spec = { name: `p${side}${pi}.${k}`, kind: big ? 'cover' : 'small', side, sgn: sg, band: pi, retries: 2, search: 130, nl: [3, 5], node: [bb - 10, bb], T: [tx, ty], term: k % 2 ? 'bud' : 'spiral', alts: [{ term: k % 2 ? 'spiral' : 'bud' }], clear: 2, leaves: big ? 4 : 3, leaf: big ? 11 : 9, roses: big && k === 0 ? [[.45, 4.5]] : undefined };
         if (placeLimb(spec, L)) nb++;
       }

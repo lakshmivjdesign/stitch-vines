@@ -27,8 +27,8 @@ window.StitchVinesGeneral = function (ctx, opt) {
     const sg = side === 'L' ? 1 : -1;
     pieces(side).forEach(([top, bot], k) => {
       let edge = 1e9; for (let r = top; r <= bot; r++) edge = Math.min(edge, free[side][r]);
-      const edge2 = Math.min(edge, STRIPMAX + 1);                                       // the strip the vine may use: at most STRIPMAX columns next to the page edge
-      const xIn = side === 'L' ? cs + edge2 - 1.9 : ce - 1 - edge2 + 1.9, xOut = side === 'L' ? cs + 1 : ce - 2;
+      const edge2 = edge;                                                              // the strip sits right beside the content, at most STRIPMAX columns wide (on a wide screen the vine hugs the content, not the page edge)
+      const xIn = side === 'L' ? cs + edge2 - 1.9 : ce - 1 - edge2 + 1.9, xOut = side === 'L' ? Math.max(cs + 1, xIn - STRIPMAX) : Math.min(ce - 2, xIn + STRIPMAX);
       const A = Math.max(.5, Math.min(3.2, Math.abs(xIn - xOut) / 2)), lamMax = 2 * Math.PI * Math.sqrt(A / .042) - .5;
       const yBot = bot - 11, yTop = top + 1, H = yBot - yTop - 30;                      // 11 rows below the start for the base bud; 30 for the first lobe and the top arch
       const heads = Math.abs(xIn - xOut) < 12 ? [[1, 16], [1, 10], [1, 6.2]] : [[1, 6.2]];                            // a narrow strip: start with a gentler head lobe
@@ -48,7 +48,7 @@ window.StitchVinesGeneral = function (ctx, opt) {
   const parentAt = (side, r) => segs[side].find(L => L.piece[0] <= r && r <= L.piece[1]);
   let nb = 0;
   for (const side of ['L', 'R']) {
-    const sg = side === 'L' ? 1 : -1, f = free[side], inner = L => { let m = 1e9; for (let r = L.piece[0]; r <= L.piece[1]; r++) m = Math.min(m, f[r]); return Math.min(m, STRIPMAX + 2); };
+    const sg = side === 'L' ? 1 : -1, f = free[side], inner = L => { let m = 1e9; for (let r = L.piece[0]; r <= L.piece[1]; r++) m = Math.min(m, f[r]); return m; };
     // pockets: runs of rows with at least 16 free columns beyond the margin strip
     const pockets = []; let a = -1;
     for (let r = rowMin; r <= rowFoot; r++) { const L = parentAt(side, r), w = L ? f[r] - inner(L) : 0, ok = w >= 12; if (ok && a < 0) a = r; if ((!ok || r === rowFoot) && a >= 0) { if (r - a >= 16) pockets.push([a, r - 1]); a = -1; } }
@@ -59,8 +59,9 @@ window.StitchVinesGeneral = function (ctx, opt) {
       const count = Math.min(3, (rows >= 110 ? 3 : rows >= 60 ? 2 : 1) + (density === 'rich' && rows >= 40 ? 1 : 0));
       for (let k = 0; k < count; k++) {
         const slice = rows / count, bb = Math.round(rb - k * slice), aa = Math.round(bb - slice + 1);
-        const reach = Math.min(depth - 3, (slice < 50 ? 30 : 14) + Math.round(slice * (slice < 50 ? .45 : .35))), tx = side === 'L' ? cs + reach : ce - 1 - reach, ty = slice < 50 ? bb - Math.round(slice * .5) : aa + 5;   // a gap: the branch rises, then runs sideways into it; a tall space: it climbs
-        const big = slice >= 45;
+        const gap = slice < 50, flip = (Math.round(ra / 40) + (side === 'R' ? 1 : 0)) % 2 === 0, small = gap && !flip;               // between sections: one big branch, one small, swapping sides
+        const inL = inner(L), reach = Math.min(depth - inL - 3, Math.round(((gap ? 30 : 14) + slice * (gap ? .45 : .35)) * (small ? .55 : 1))), tx = side === 'L' ? cs + inL + reach : ce - 1 - inL - reach, ty = gap ? bb - Math.round(slice * (small ? .35 : .5)) : aa + 5;
+        const big = slice >= 45 || (gap && !small);
         const spec = { name: `p${side}${pi}.${k}`, kind: big ? 'cover' : 'small', side, sgn: sg, band: pi, retries: 2, search: 130, nl: [3, 5], node: [bb - 10, bb], T: [tx, ty], term: k % 2 ? 'bud' : 'spiral', alts: [{ term: k % 2 ? 'spiral' : 'bud' }], clear: 2, leaves: big ? 4 : 3, leaf: big ? 11 : 9, roses: big && k === 0 ? [[.45, 4.5]] : undefined };
         if (placeLimb(spec, L)) nb++;
       }
