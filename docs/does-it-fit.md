@@ -13,7 +13,7 @@ It draws vines on **both** sides or on neither. One lone vine looks wrong, so it
 
 ## What I tested (honest numbers)
 
-A test set of recorded layouts (only the grid of free, text and object cells is kept: no words, no pictures): 18 public pages, the author's four portfolio pages and a demo page, each at 700, 910, 1024, 1440 and 1920 px: 116 layouts. Result: vines grew on 110 of them and passed every geometry check; the other 6 gave a plain "does not fit" message and drew nothing. Pages used: articles, blogs, documentation, agency and landing pages, government and non-profit pages.
+A test set of recorded layouts (only the grid of free, text and object cells is kept: no words, no pictures): 18 public pages, the author's four portfolio pages and a demo page, each at 700, 910, 1024, 1440 and 1920 px: 120 layouts. Result: vines grew on 114 of them and passed every geometry check; the other 6 gave a plain "does not fit" message and drew nothing. Pages used: articles, blogs, documentation, agency and landing pages, government and non-profit pages.
 
 Where it still fails (guessing the cause from the logs: the free strip is only 5 to 8 stitches wide beside text, too narrow for the first bend):
 

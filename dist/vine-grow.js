@@ -169,8 +169,14 @@ window.StitchVinesEngine = function (ctx) {
     stats.fail.push(spec.name + ': no candidate fits (' + pool.length + ' tried) ' + JSON.stringify(dbg) + JSON.stringify(why)); return null; }
 
   function undo(L) { release(L.sid); L.organs.forEach(o => release(o.eid)); L.organs = []; (L.children || []).forEach(undo); const k = limbs.indexOf(L); if (k >= 0) limbs.splice(k, 1); }
+  // the checker's rule 1b, run on a finished stem: no two stitches of one stem within a cell of each other unless they are 12 stitches or less apart along it
+  const selfTouch = pl => { const P = [pl[0]]; let acc = 0, need = .35; for (let i = 1; i < pl.length; i++) { let a = pl[i - 1]; const b = pl[i]; let d = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      while (acc + d >= need && d > 0) { const t = (need - acc) / d, p = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]; P.push(p); a = p; d = Math.hypot(b[0] - a[0], b[1] - a[1]); acc = 0; need = .35; } acc += d; }
+    const m = new Map(); P.forEach((p, i) => { const k = key(Math.round(p[0]), Math.round(p[1])); (m.get(k) || m.set(k, []).get(k)).push(i); });
+    for (let i = 0; i < P.length; i++) { const c = Math.round(P[i][0]), r = Math.round(P[i][1]); for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) for (const j of m.get(key(c + dx, r + dy)) || []) if (Math.abs(j - i) * .35 > 12) return true; } return false; };
   function commitLimb(spec, cd, par) {
     const { g, i, tail, at } = cd, P = g.P.slice(0, i + 1), stemPoly = tail ? P.concat(tail.slice(1)) : P;
+    if (selfTouch(stemPoly)) { why.self = (why.self || 0) + 1; return null; }
     const L = { id: ++limbSeq, name: spec.name, kind: spec.kind, side: spec.side, band: spec.band, parent: par.id, term: spec.term, stem: P, tail: tail || [], head: [], organs: [], children: [], P, TH: g.TH.slice(0, i + 1), S: g.S.slice(0, i + 1), K: g.K.slice(0, i + 1), sgn: spec.sgn ?? cd.gen.lobes[0].sg };
     L.sid = newEl(L, "stem", at, 14); const cells = cellsOf([stemPoly]); if (blocked(cells, [], par.sid, at, 14)) { why.late = (why.late || 0) + 1; return null; } claim(L.sid, cells, []);
     if (spec.term !== 'spiral') { const n = P.length - 1, o = spec.term === 'bud' ? tryOrgan(L, mkBud, n, [0], [spec.endSize || 9, 7.5, 6], { ang: 0, role: 'terminal' }) : tryOrgan(L, mkRose, n, [0], [spec.endSize || 5, 4.2, 3.5], { ang: 0, role: 'terminal' }); if (!o) { why.term = (why.term || 0) + 1; undo(L); return null; } }
@@ -254,7 +260,7 @@ window.StitchVinesGeneral = function (ctx, opt) {
       if (!nws.length) { stats.fail.push(`margin ${side} piece ${top}-${bot}: height ${H} fits no wave`); return; }
       let L = marginVine(sg, { seg: true, name: `m${side}${k}`, xIn, xOut, yBot, yTop, NWs: nws.slice(0, 3), dBots: [0, 8, 16], r0s: [9.5, 8, 6.8], dTops: [0, 8], heads: heads });
       if (!L) { status.rung = Math.max(status.rung, 1); L = marginVine(sg, { seg: true, term: 'bud', name: `m${side}${k}`, xIn, xOut, yBot, yTop: yTop + 9, NWs: nws.slice(0, 3), dBots: [0, 8, 16], dTops: [0, 8], heads: heads }); }   // rung 1: the top ends in a bud, not a spiral (a spiral needs about 14 stitches of room)
-      if (L) { E.marginRoses(L); marginLeaves(L); L.piece = [top, bot]; segs[side].push(L); }
+      if (L) { L.piece = [top, bot]; segs[side].push(L); }                                    // roses and leaves come after the branches, so they never crowd a branch's start
     });
   }
   const nMargin = segs.L.length + segs.R.length;
@@ -284,6 +290,7 @@ window.StitchVinesGeneral = function (ctx, opt) {
       }
     });
   }
+  [...segs.L, ...segs.R].forEach(L => { E.marginRoses(L); marginLeaves(L); });
   status.grew = limbs.length;
   const out = finish(); out.status = status; out.rung = status.rung; return out;
 };

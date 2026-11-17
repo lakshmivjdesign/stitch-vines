@@ -36,7 +36,7 @@ window.StitchVinesGeneral = function (ctx, opt) {
       if (!nws.length) { stats.fail.push(`margin ${side} piece ${top}-${bot}: height ${H} fits no wave`); return; }
       let L = marginVine(sg, { seg: true, name: `m${side}${k}`, xIn, xOut, yBot, yTop, NWs: nws.slice(0, 3), dBots: [0, 8, 16], r0s: [9.5, 8, 6.8], dTops: [0, 8], heads: heads });
       if (!L) { status.rung = Math.max(status.rung, 1); L = marginVine(sg, { seg: true, term: 'bud', name: `m${side}${k}`, xIn, xOut, yBot, yTop: yTop + 9, NWs: nws.slice(0, 3), dBots: [0, 8, 16], dTops: [0, 8], heads: heads }); }   // rung 1: the top ends in a bud, not a spiral (a spiral needs about 14 stitches of room)
-      if (L) { E.marginRoses(L); marginLeaves(L); L.piece = [top, bot]; segs[side].push(L); }
+      if (L) { L.piece = [top, bot]; segs[side].push(L); }                                    // roses and leaves come after the branches, so they never crowd a branch's start
     });
   }
   const nMargin = segs.L.length + segs.R.length;
@@ -66,6 +66,7 @@ window.StitchVinesGeneral = function (ctx, opt) {
       }
     });
   }
+  [...segs.L, ...segs.R].forEach(L => { E.marginRoses(L); marginLeaves(L); });
   status.grew = limbs.length;
   const out = finish(); out.status = status; out.rung = status.rung; return out;
 };

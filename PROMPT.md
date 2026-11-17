@@ -58,7 +58,7 @@ Rules for you:
 
 Works on sites with **side margins about 24 px or wider** (it makes the stitch smaller, down to 4.5 px, so a narrow margin still holds 5 or more stitches) and with free space left and right of the content. It does best on portfolio, blog, landing and article pages. It does **not** fit: full-bleed designs with no margin, pages that scroll inside an inner box instead of the window, pages with sidebars on both sides, or pages with no free strip at all. On those it says so in the status message and draws nothing. It needs a browser that allows background workers made from a Blob.
 
-Measured on 18 real public pages at 5 widths plus 5 of the author's own: vines grew at 110 of 116 layouts (the other 6 get a plain "does not fit" message). That is a test set, not a promise about your site.
+Measured on 18 real public pages at 5 widths plus 5 of the author's own and 4 example pages: vines grew at 114 of 120 layouts (the other 6 get a plain "does not fit" message). That is a test set, not a promise about your site.
 
 ### Reading the status
 
