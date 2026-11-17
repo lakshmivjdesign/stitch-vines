@@ -283,7 +283,7 @@ window.StitchVinesGeneral = function (ctx, opt) {
       const count = Math.min(3, (rows >= 110 ? 3 : rows >= 60 ? 2 : 1) + (density === 'rich' && rows >= 40 ? 1 : 0));
       for (let k = 0; k < count; k++) {
         const slice = rows / count, bb = Math.round(rb - k * slice), aa = Math.round(bb - slice + 1);
-        const tx = side === 'L' ? cs + Math.min(depth - 3, 14 + Math.round(slice * .35)) : ce - 1 - Math.min(depth - 3, 14 + Math.round(slice * .35)), ty = aa + 5;
+        const reach = Math.min(depth - 3, (slice < 50 ? 30 : 14) + Math.round(slice * (slice < 50 ? .45 : .35))), tx = side === 'L' ? cs + reach : ce - 1 - reach, ty = slice < 50 ? bb - Math.round(slice * .5) : aa + 5;   // a gap: the branch rises, then runs sideways into it; a tall space: it climbs
         const big = slice >= 45;
         const spec = { name: `p${side}${pi}.${k}`, kind: big ? 'cover' : 'small', side, sgn: sg, band: pi, retries: 2, search: 130, nl: [3, 5], node: [bb - 10, bb], T: [tx, ty], term: k % 2 ? 'bud' : 'spiral', alts: [{ term: k % 2 ? 'spiral' : 'bud' }], clear: 2, leaves: big ? 4 : 3, leaf: big ? 11 : 9, roses: big && k === 0 ? [[.45, 4.5]] : undefined };
         if (placeLimb(spec, L)) nb++;

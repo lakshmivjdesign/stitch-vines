@@ -78,7 +78,7 @@
     const mg = A.margins(s), m = Math.max(0, Math.floor(Math.min(mg.left, mg.right))), variants = SIZES.map(u => A.rasterize(s, u, m, 1, 1.5));
     api.stats.measureMs = Math.round(performance.now() - t0);
     const fp = [s.W, Math.round(s.docH), s.text.length, s.objs.length, Math.round(s.top), Math.round(s.foot), m, cfg.textClear, cfg.density, cfg.maxHeight].join('|'), key = cKey(hash(fp));
-    const hit = cGet(key); if (hit && hit.ok) { api.stats.cache = 'hit'; last = hit; draw(hit); say('ready', hit.message, { fits: true, cached: true }); return; }
+    const hit = cGet(key); if (hit && hit.ok) { api.stats.cache = 'hit'; last = hit; api.lattice = { u: hit.u, m: hit.m }; draw(hit); say('ready', hit.message, { fits: true, cached: true }); return; }
     api.stats.cache = 'miss'; const w = getWorker();
     if (!w) { say('error', 'Vines could not be grown: this browser or the page\'s security policy does not allow a background worker (a Blob worker). The page was left as it is.', { fits: null }); return; }
     say('working', 'Growing vines in the background… the page stays usable.');
@@ -87,7 +87,7 @@
       if (d.stage === 'margins') { if (d.result && d.result.real) { draw(Object.assign({ W: s.W, H }, d.result)); say('working', 'Margin vines are in; branches are still growing…'); } return; }
       api.stats.growMs = Math.round(performance.now() - tg);
       if (!d.result || !d.result.stems.length) { last = null; clear(); say('none', d.message, { fits: false }); return; }
-      const r = Object.assign({ W: s.W, H, ok: true, message: d.message }, d.result); last = r; draw(r); cPut(key, r); say('ready', d.message, { fits: true, cached: false }); };
+      const r = Object.assign({ W: s.W, H, ok: true, message: d.message }, d.result); last = r; api.lattice = { u: r.u, m: r.m }; draw(r); cPut(key, r); say('ready', d.message, { fits: true, cached: false }); };
     w.onerror = ev => { worker = null; say('error', 'The background worker failed: ' + (ev && ev.message || 'unknown error') + '. The page was left as it is.'); };
     w.postMessage({ id: my, variants: variants.map(v => ({ u: v.u, m: v.m, W: v.W, top: v.top, foot: v.foot, C: v.C, R: v.R, c0: v.c0, grid: v.grid })), opts: { textClear: cfg.textClear, density: cfg.density, budgetMs: cfg.budgetMs } });
     // a worker that never answers (a very slow device): give up after a hard limit and say so
