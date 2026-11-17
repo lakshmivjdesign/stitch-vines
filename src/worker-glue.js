@@ -8,7 +8,7 @@ onmessage = e => {
   const { id, variants, opts } = e.data, t0 = Date.now();
   const ctxs = variants.map(v => { const g = v.grid, cEnd = v.c0 + g[0].length; return Object.assign({}, v, { cStart: v.c0, cEnd, textClear: opts.textClear, heads: [], rows: [], cell: (c, r) => (c < v.c0 || c >= cEnd || r < 0 || r >= g.length) ? 0 : +(g[r][c - v.c0] || 0) }); });
   const ctx = Object.assign({}, ctxs[0], { variants: ctxs }), byU = new Map(ctxs.map(c => [c.u, c]));
-  const out = self.StitchVines(ctx, { density: opts.density, deadline: t0 + opts.budgetMs, onStage: (o, info) => { if (info.real) postMessage({ id, stage: 'margins', result: Object.assign(pack(o, info.u, byU.get(info.u).m), { real: true }) }); } });
+  const out = self.StitchVines(ctx, { density: opts.density, hug: opts.hug, deadline: t0 + opts.budgetMs, onStage: (o, info) => { if (info.real) postMessage({ id, stage: 'margins', result: Object.assign(pack(o, info.u, byU.get(info.u).m), { real: true }) }); } });
   const st = out.status || {}, c = byU.get(out.u) || ctxs[0];
   postMessage({ id, stage: 'done', message: st.message, ok: !!st.ok, result: st.ok ? pack(out, out.u, c.m) : null, ms: Date.now() - t0 });
 };

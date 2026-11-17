@@ -252,8 +252,8 @@ window.StitchVinesGeneral = function (ctx, opt) {
     const sg = side === 'L' ? 1 : -1;
     pieces(side).forEach(([top, bot], k) => {
       let edge = 1e9; for (let r = top; r <= bot; r++) edge = Math.min(edge, free[side][r]);
-      const edge2 = edge;                                                              // the strip sits right beside the content, at most STRIPMAX columns wide (on a wide screen the vine hugs the content, not the page edge)
-      const xIn = side === 'L' ? cs + edge2 - 1.9 : ce - 1 - edge2 + 1.9, xOut = side === 'L' ? Math.max(cs + 1, xIn - STRIPMAX) : Math.min(ce - 2, xIn + STRIPMAX);
+      const hug = opt.hug !== false, edge2 = hug ? edge : Math.min(edge, STRIPMAX + 1);   // hug: the strip sits right beside the content (at most STRIPMAX wide). Not hug: at the page edge, so branches can reach across an empty side
+      const xIn = side === 'L' ? cs + edge2 - 1.9 : ce - 1 - edge2 + 1.9, xOut = !hug ? (side === 'L' ? cs + 1 : ce - 2) : (side === 'L' ? Math.max(cs + 1, xIn - STRIPMAX) : Math.min(ce - 2, xIn + STRIPMAX));
       const A = Math.max(.5, Math.min(3.2, Math.abs(xIn - xOut) / 2)), lamMax = 2 * Math.PI * Math.sqrt(A / .042) - .5;
       const yBot = bot - 11, yTop = top + 1, H = yBot - yTop - 30;                      // 11 rows below the start for the base bud; 30 for the first lobe and the top arch
       const heads = Math.abs(xIn - xOut) < 12 ? [[1, 16], [1, 10], [1, 6.2]] : [[1, 6.2]];                            // a narrow strip: start with a gentler head lobe
@@ -261,7 +261,7 @@ window.StitchVinesGeneral = function (ctx, opt) {
       if (!nws.length) { stats.fail.push(`margin ${side} piece ${top}-${bot}: height ${H} fits no wave`); return; }
       let L = marginVine(sg, { seg: true, name: `m${side}${k}`, xIn, xOut, yBot, yTop, NWs: nws.slice(0, 3), dBots: [0, 8, 16], r0s: [9.5, 8, 6.8], dTops: [0, 8], heads: heads });
       if (!L) { status.rung = Math.max(status.rung, 1); L = marginVine(sg, { seg: true, term: 'bud', name: `m${side}${k}`, xIn, xOut, yBot, yTop: yTop + 9, NWs: nws.slice(0, 3), dBots: [0, 8, 16], dTops: [0, 8], heads: heads }); }   // rung 1: the top ends in a bud, not a spiral (a spiral needs about 14 stitches of room)
-      if (L) { L.piece = [top, bot]; segs[side].push(L); }                                    // roses and leaves come after the branches, so they never crowd a branch's start
+      if (L) { L.piece = [top, bot]; L.strip = edge2; segs[side].push(L); }                                    // roses and leaves come after the branches, so they never crowd a branch's start
     });
   }
   const nMargin = segs.L.length + segs.R.length;
@@ -273,7 +273,7 @@ window.StitchVinesGeneral = function (ctx, opt) {
   const parentAt = (side, r) => segs[side].find(L => L.piece[0] <= r && r <= L.piece[1]);
   let nb = 0;
   for (const side of ['L', 'R']) {
-    const sg = side === 'L' ? 1 : -1, f = free[side], inner = L => { let m = 1e9; for (let r = L.piece[0]; r <= L.piece[1]; r++) m = Math.min(m, f[r]); return m; };
+    const sg = side === 'L' ? 1 : -1, f = free[side], inner = L => { if (L.strip != null && opt.hug === false) return L.strip; let m = 1e9; for (let r = L.piece[0]; r <= L.piece[1]; r++) m = Math.min(m, f[r]); return m; };
     // pockets: runs of rows with at least 16 free columns beyond the margin strip
     const pockets = []; let a = -1;
     for (let r = rowMin; r <= rowFoot; r++) { const L = parentAt(side, r), w = L ? f[r] - inner(L) : 0, ok = w >= 12; if (ok && a < 0) a = r; if ((!ok || r === rowFoot) && a >= 0) { if (r - a >= 16) pockets.push([a, r - 1]); a = -1; } }
@@ -281,13 +281,13 @@ window.StitchVinesGeneral = function (ctx, opt) {
       if (late()) { if (!status.notes.includes('time budget reached')) say('time budget reached: some branches were left out'); return; }
       const rows = rb - ra + 1, L = parentAt(side, rb); if (!L) return;
       let depth = 1e9; for (let r = ra; r <= rb; r++) depth = Math.min(depth, f[r]);
-      const count = Math.min(3, (rows >= 110 ? 3 : rows >= 60 ? 2 : 1) + (density === 'rich' && rows >= 40 ? 1 : 0));
+      const count = opt.hug === false && density === 'rich' && rows >= 150 ? Math.min(6, Math.ceil(rows / 45)) : Math.min(3, (rows >= 110 ? 3 : rows >= 60 ? 2 : 1) + (density === 'rich' && rows >= 40 ? 1 : 0));   // an empty side beside the content, asked to be covered: a branch about every 45 rows
       for (let k = 0; k < count; k++) {
         const slice = rows / count, bb = Math.round(rb - k * slice), aa = Math.round(bb - slice + 1);
         const gap = slice < 50, flip = (Math.round(ra / 40) + (side === 'R' ? 1 : 0)) % 2 === 0, small = gap && !flip;               // between sections: one big branch, one small, swapping sides
-        const inL = inner(L), reach = Math.min(depth - inL - 3, Math.round(((gap ? 30 : 14) + slice * (gap ? .45 : .35)) * (small ? .55 : 1))), tx = side === 'L' ? cs + inL + reach : ce - 1 - inL - reach, ty = gap ? bb - Math.round(slice * (small ? .35 : .5)) : aa + 5;
+        const inL = inner(L), reach = Math.min(depth - inL - 3, Math.round(((gap ? 30 : (opt.hug === false ? 40 : 14)) + slice * (gap ? .45 : (opt.hug === false ? 1.3 : .35))) * (small ? .55 : 1))), tx = side === 'L' ? cs + inL + reach : ce - 1 - inL - reach, ty = gap ? bb - Math.round(slice * (small ? .35 : .5)) : aa + 5;
         const big = slice >= 45 || (gap && !small);
-        const spec = { name: `p${side}${pi}.${k}`, kind: big ? 'cover' : 'small', side, sgn: sg, band: pi, retries: 2, search: 130, nl: [3, 5], node: [bb - 10, bb], T: [tx, ty], term: k % 2 ? 'bud' : 'spiral', alts: [{ term: k % 2 ? 'spiral' : 'bud' }], clear: 2, leaves: big ? 4 : 3, leaf: big ? 11 : 9, roses: big && k === 0 ? [[.45, 4.5]] : undefined };
+        const spec = { name: `p${side}${pi}.${k}`, kind: big ? 'cover' : 'small', side, sgn: sg, band: pi, retries: 2, search: opt.hug === false && !gap ? 240 : 130, nl: opt.hug === false && !gap ? [5, 8] : [3, 5], node: [bb - 10, bb], T: [tx, ty], term: k % 2 ? 'bud' : 'spiral', alts: [{ term: k % 2 ? 'spiral' : 'bud' }], clear: 2, leaves: big ? 4 : 3, leaf: big ? 11 : 9, roses: big && k === 0 ? [[.45, 4.5]] : undefined };
         if (placeLimb(spec, L)) nb++;
       }
     });

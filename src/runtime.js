@@ -9,6 +9,7 @@
     look: 'cross',                // 'cross' | 'charcoal' | 'pencil'
     ink: 'indigo',                // one colour for the whole drawing: 'white' | 'indigo' | 'terracotta' | 'charcoal'
     textClear: true,              // vines keep out of text (WCAG). false: they may pass under words; then YOU check the contrast
+    hug: true,                    // true: margin vines sit right beside your content. false: at the page edge, branches reach across an empty side (for a page whose content sits to one side)
     density: 'normal',            // 'sparse' (margin vines only) | 'normal' | 'rich' (more branches where there is room)
     maxHeight: 10000,             // plan the first N css px of the page (long pages: vines for the first screens)
     zIndex: -1,                   // the layer sits behind the content; raise it if your page paints a background over it
@@ -77,7 +78,7 @@
     if (s.problems.length) { say('none', 'This page does not fit: ' + s.problems[0] + '. Nothing was drawn and nothing on the page was changed.', { fits: false }); return; }
     const mg = A.margins(s), m = Math.max(0, Math.floor(Math.min(mg.left, mg.right))), variants = SIZES.map(u => A.rasterize(s, u, m, 1, 1.5));
     api.stats.measureMs = Math.round(performance.now() - t0);
-    const fp = [s.W, Math.round(s.docH), s.text.length, s.objs.length, Math.round(s.top), Math.round(s.foot), m, cfg.textClear, cfg.density, cfg.maxHeight].join('|'), key = cKey(hash(fp));
+    const fp = [s.W, Math.round(s.docH), s.text.length, s.objs.length, Math.round(s.top), Math.round(s.foot), m, cfg.textClear, cfg.density, cfg.hug, cfg.maxHeight].join('|'), key = cKey(hash(fp));
     const hit = cGet(key); if (hit && hit.ok) { api.stats.cache = 'hit'; last = hit; api.lattice = { u: hit.u, m: hit.m }; draw(hit); say('ready', hit.message, { fits: true, cached: true }); return; }
     api.stats.cache = 'miss'; const w = getWorker();
     if (!w) { say('error', 'Vines could not be grown: this browser or the page\'s security policy does not allow a background worker (a Blob worker). The page was left as it is.', { fits: null }); return; }
@@ -89,7 +90,7 @@
       if (!d.result || !d.result.stems.length) { last = null; clear(); say('none', d.message, { fits: false }); return; }
       const r = Object.assign({ W: s.W, H, ok: true, message: d.message }, d.result); last = r; api.lattice = { u: r.u, m: r.m }; draw(r); cPut(key, r); say('ready', d.message, { fits: true, cached: false }); };
     w.onerror = ev => { worker = null; say('error', 'The background worker failed: ' + (ev && ev.message || 'unknown error') + '. The page was left as it is.'); };
-    w.postMessage({ id: my, variants: variants.map(v => ({ u: v.u, m: v.m, W: v.W, top: v.top, foot: v.foot, C: v.C, R: v.R, c0: v.c0, grid: v.grid })), opts: { textClear: cfg.textClear, density: cfg.density, budgetMs: cfg.budgetMs } });
+    w.postMessage({ id: my, variants: variants.map(v => ({ u: v.u, m: v.m, W: v.W, top: v.top, foot: v.foot, C: v.C, R: v.R, c0: v.c0, grid: v.grid })), opts: { textClear: cfg.textClear, density: cfg.density, hug: cfg.hug, budgetMs: cfg.budgetMs } });
     // a worker that never answers (a very slow device): give up after a hard limit and say so
     setTimeout(() => { if (my === token && api.status.state === 'working') { try { w.terminate(); } catch (e) { /* */ } worker = null; clear(); say('none', 'This page took too long to plan on this device, so no vines were drawn. Nothing on the page was changed.', { fits: null }); } }, Math.max(15000, cfg.budgetMs * 5));
   }
